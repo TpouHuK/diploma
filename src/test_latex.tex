@@ -395,7 +395,7 @@ NVIDIA~Jetson~Nano, стоимостью \num{1421.83} р.,
 Banana~Pi~CM4, стоимостью \num{300.12} р.
 
 \FPeval{\savingsResult}{round(1421.83 - 300.12, 2)}
-\def \robotCount {35}
+\def \robotCount {40}
 \FPeval{\costWin}{round(\robotCount * \savingsResult, 2)}
 
 Это позволяет экономить \num{\savingsResult} р. на единицу продукции.
@@ -461,9 +461,125 @@ Banana~Pi~CM4, стоимостью \num{300.12} р.
 	% \alpha = \frac{\num{1}}{ (\num{1} + \text{Е}_\text{н}^\text{t - t_\text{р}}) }
 \end{equation}
 \begin{explanationx}
-\item[где] - $\text{Е}_\text{н}$ - норма дисконта (в долях единиц), равная или
-	больше средней процентной ставки по банковским депозитам
+	\item[где] - $\text{Е}_\text{н}$ -- норма дисконта (в долях единиц), равная
+		или больше средней процентной ставки по банковским депозитам,
+		действующей на момент осуществления расчётов;
+	\item $t$ -- порядковый номер года, затраты и результаты которого приводятся
+		к расчётному году;
+	\item $t_\text{р}$ - расчётный год (в качестве расчётного года принимается
+		год вложения инвестиций, $t_\text{р} = \num{1}$).
 \end{explanationx}
+
+\def \stavkaBankov {0.1376}
+Примем $\text{Е}_\text{н} = \num{0.14}$.
+Предположим что используемое ПО будет использоваться пользователем на протяжении
+четырёх лет.
+
+Чистый дисконтированный доход рассчитывается по формуле
+\begin{equation}
+	\text{ЧДД} = \sum^{n}_{t = 1} (\text{Р}_t - \text{И}_t) \cdot \alpha_t
+\end{equation}
+\begin{explanationx}
+	\item[где] $n$ -- расчётный период, лет;
+	\item $\text{Р}_t$ -- экономический эффект полученный в году $t$? р.;
+	\item $\text{И}_t$ -- затраты на разработку в году t, р.
+\end{explanationx}
+
+\bgroup
+\def\arraystretch{1.2}
+\begin{table}
+	\caption{Расчёт эффективности инвестиционного проекта}
+	\begin{tabular}{|p{3.1cm}|p{1.5cm}|c|c|c|c|}
+		\hline
+		\multirow{2}{*}{\parbox{3.8cm}{Наименование показателя}}
+		& \multirow{2}{1.2cm}{Усл. обоз.}
+		& \multicolumn{4}{c|}{Расчётный период, год}
+		\\ \cline{3-6}
+		& & 1-й & 2-й & 3-й & 4-й
+		\\ \hline
+
+		\textbf{Результат}
+		& \multicolumn{5}{c|}{}
+		\\ \hline
+
+		1. Экономический эффект, р.
+		& $\Delta\text{П}_\text{ч}$ % Было P_t, но у нас эконом эффект это дельта
+		& \num{\totalWin}
+		& \num{\totalWin}
+		& \num{\totalWin}
+		& \num{\totalWin}
+		\\ \hline
+
+		2. Коэффициент дисконтирования
+		& $\alpha_t$
+		& \num{1.0}
+		& \num{0.87}
+		& \num{0.76}
+		& \num{0.64}
+		\\ \hline
+
+		3. Результат с учётом фактора времени, р.
+		& $\text{Р}_t\alpha_t$
+		& \num{\fpeval{round(\totalWin * 1.0, 2)}}
+		& \num{\fpeval{round(\totalWin * 0.87, 2)}}
+		& \num{\fpeval{round(\totalWin * 0.76, 2)}}
+		& \num{\fpeval{round(\totalWin * 0.64, 2)}}
+		\\ \hline
+
+		\textbf{Затраты }
+		& \multicolumn{5}{c|}{}
+		\\ \hline
+
+		4. Инвестиции в разработку ПО, р.
+		& $\text{И}$
+		& \num{\fpeval{\finalCost + \supportCost}}
+		& \num{\supportCost}
+		& \num{\supportCost}
+		& \num{\supportCost}
+		\\ \hline
+
+		5. Инвестиции с учётом фактора времени, р.
+		& $\text{И}_t\alpha_t$
+		& \num{\fpeval{round(1.0 * (\finalCost + \supportCost), 2)}}
+		& \num{\fpeval{round(0.87 * (\supportCost), 2)            }}
+		& \num{\fpeval{round(0.76 * (\supportCost), 2)            }}
+		& \num{\fpeval{round(0.64 * (\supportCost), 2)            }}
+		\\ \hline
+
+		6. Чистый дисконтированный доход по годам ($\text{Р}_t\alpha_t -
+			\text{И}_t\alpha_t$), р.
+		& $\text{ЧДД}_t$
+		& \num{\fpeval{round(\totalWin * 1.0  -  (1.0 * (\finalCost +
+		\supportCost)), 2)     }}
+		& \num{\fpeval{round(\totalWin * 0.87 -  (0.87 * (\supportCost)), 2) }}
+		& \num{\fpeval{round(\totalWin * 0.76 -  (0.76 * (\supportCost)), 2) }}
+		& \num{\fpeval{round(\totalWin * 0.64 -  (0.64 * (\supportCost)), 2) }}
+		\\ \hline
+		
+		7. ЧДД нарастающим итогом, р.
+		& $\text{ЧДД}$
+		& \num{\fpeval{\totalWin * 1.0  -  round(1.0 * (\finalCost + \supportCost), 2)     }}
+		& \num{\fpeval{
+			\totalWin * 1.0  -  round(1.0 * (\finalCost + \supportCost), 2) +
+			\totalWin * 0.87 -  round(0.87 * (\supportCost), 2) }}
+		& \num{\fpeval{
+			\totalWin * 1.0  -  round(1.0 * (\finalCost + \supportCost), 2) +
+			\totalWin * 0.87 -  round(0.87 * (\supportCost), 2) +
+			\totalWin * 0.76 -  round(0.76 * (\supportCost), 2) 
+		}}
+		& \num{\fpeval{
+			\totalWin * 1.0  -  round(1.0 * (\finalCost + \supportCost), 2) +
+			\totalWin * 0.87 -  round(0.87 * (\supportCost), 2) +
+			\totalWin * 0.76 -  round(0.76 * (\supportCost), 2) +
+			\totalWin * 0.64 -  round(0.76 * (\supportCost), 2) 
+		}}
+		\\ \hline
+
+	\end{tabular}
+\end{table}
+\egroup
+
+
 
 В результате технико-экономического обоснования разработки программного
 средства навигации мобильных систем были получены следующие экономические
