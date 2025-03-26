@@ -2,12 +2,11 @@
 
 \begin{document}
 
-\newcommand{\appname}{ПО} 
+\newcommand{\appname}{ПСНМС} 
 \newcommand{\ros}{ROS}
 
 % Программное средство навигации мобильных систем
-% Somehow select language works only when it's inside the document
-% Can't be put in a preamble
+% Выбор языка должен быть в документе
 \selectlanguage{russian}
 
 \sectioncentered*{ОПРЕДЕЛЕНИЯ И СОКРАЩЕНИЯ}
@@ -30,6 +29,7 @@
 объединение различных компонентов большого программного проекта.
 
 \ros -- Robot Operating System
+
 \ros2{} - Robot Operating System 2
 
 \sectioncentered*{ВВЕДЕНИЕ}
@@ -120,7 +120,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 	\item $\text{К}_\text{пр}$ - коэффициент премий и иных стимулирующих
 		выплат (\num{1.3});
 	\item $\text{З}_\text{ч}$ --  Часовой оклад исполнителя $i\text{-й}$
-		категории, руб.;
+		категории, р.;
 	\item $t$  -- трудоёмкость работ, выполняемых исполнителем $i\text{-й}$
 		категории, ч.
 \end{explanationx}
@@ -229,8 +229,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 		& \num{\costBonuses}
 		\\ \hline
 
-		\multicolumn{5}{|l|}{Итого затраты на основную заработную плату
-		разработчиков}
+		\multicolumn{5}{|l|}{Общая сумма затрат на разработку}
 		& \num{\costTotal}
 		\\ \hline
 	\end{tabular}
@@ -284,7 +283,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 
 \FPeval{\socialCost}{round((\costTotal + \additionalSalary) * 0.35, 2)}
 \begin{equation}
-	\text{}_\text{} = \frac{(\num{\costTotal} + \num{\additionalSalary}) \cdot
+	\text{Р}_\text{соц} = \frac{(\num{\costTotal} + \num{\additionalSalary}) \cdot
 	35}{100} = \num{\socialCost}
 	\ \text{.}
 \end{equation}
@@ -356,13 +355,19 @@ which results in ability to use cheaper hardware resulting in more profits.
 \end{table}
 
 
+\FloatBarrier
 
 \subsection{Экономический эффект от разработки программного обеспечения по
 индивидуальному заказу}
-Экономический эффект измеряется разностью между денежным доходом от деятельности
-и денежным расходам на осуществление деятельности.
+Использование данного программного средства позволяет использовать более дешёвое
+аппаратное обеспечение. Так как навигация и SLAM являются ресурсоёмкими
+операциями, обычно используют компьютер NVIDIA Jetson Nano, стоимостью
+\num{1421.83} р. \appname{} позволяет использовать Banana Pi CM4, стоимостью
+\num{300.12} р.
+\FPeval{\savingsResult}{round(1421.83 - 300.12, 2)}
+Это позволяет экономить \num{\savingsResult} р. на единицу продукции.
+Взяв партию из 30 мобильных систем, мы получаем выгоду для организации-заказчика
 
-В результате технико-экономического обоснования разработки \appname{} .
 
 \bibliography{test}
 \end{document}

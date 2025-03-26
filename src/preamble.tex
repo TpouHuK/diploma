@@ -8,6 +8,9 @@
 \documentclass[a4paper,14pt,russian,oneside,final]{extreport}
 \usepackage{cite}
 
+%\usepackage{float}
+%\restylefloat{table}
+
 
 % Зачем: Учет особенностей различных языков.
 \usepackage[english,russian]{babel}
@@ -42,12 +45,13 @@
 \newlength{\fivecharsapprox}
 \setlength{\fivecharsapprox}{6ex}
 
+\usepackage{placeins}
 
 
 % Зачем: Добавляет отступы для абзацев.
 % Почему: Пункт 2.1.3 Требований по оформлению пояснительной записки.
 \usepackage{indentfirst}
-\setlength{\parindent}{\fivecharsapprox} % Примерно соответсвует 5 символам.
+\setlength{\parindent}{1.25cm} % 1.25 - 1.27 см абзацы
 
 
 % Зачем: Настраивает отступы от границ страницы.
@@ -60,13 +64,6 @@
 \usepackage[nodisplayskipstretch]{setspace} 
 \setstretch{1.0}
 \onehalfspacing
-
-% Зачем: Выбор шрифта по-умолчанию. 
-% Почему: Пункт 2.1.1 Требований по оформлению пояснительной записки.
-% Примечание: В требованиях не указан, какой именно шрифт использовать. По традиции используем TNR.
-%\renewcommand{\rmdefault}{ftm} % Times New Roman
-
-
 
 % Зачем: Отключает использование изменяемых межсловных пробелов.
 % Почему: Так не принято делать в текстах на русском языке.
