@@ -56,7 +56,7 @@
 \subsection{Характеристика программного средства}
 \subsubsection{}
 Основной целью, поставленной в рамках данного дипломного проекта, является
-разработка
+разработка 
 
 Программное средство навигации мобильных систем осуществляет задачу перемещения
 и определения местоположения мобильной системы, построение и исполнение 
@@ -79,8 +79,8 @@
 \end{itemize}
 
 
-
-В сравнении с \ros2{}, который является наиболее популярным аналогом, \appname{} упрощает развёртывание, требует меньше
+В сравнении с \ros2{}, который является наиболее популярным аналогом, \appname{}
+упрощает развёртывание, требует меньше
 вычислительных ресурсов.
 
 - Single static linked binary, performance and memory consumption,
@@ -149,20 +149,35 @@ which results in ability to use cheaper hardware resulting in more profits.
 команды разработчиков, результаты которого приведены в таблице
 \ref{table:kysymys}.
 
-\def \devSalary {2100.00}
-\def \amountOfHours {400}
-\FPeval{\hourlySalary}{round(\devSalary / \hoursPerMonth, 2)}
-\FPeval{\devCost}{round(\amountOfHours * \hourlySalary, 2)}
 
+\def \devSalary {3100.00}
+\def \devAmountOfHours {458}
+\FPeval{\devHourlySalary}{round(\devSalary / \hoursPerMonth, 2)}
+\FPeval{\devCost}{round(\devAmountOfHours * \devHourlySalary, 2)}
+
+\def \testSalary {2100.00}
+\def \testAmountOfHours {200}
+\FPeval{\testHourlySalary}{round(\testSalary / \hoursPerMonth, 2)}
+\FPeval{\testCost}{round(\testAmountOfHours * \testHourlySalary, 2)}
+
+\def \managerSalary {3000.00}
+\def \managerAmountOfHours {120}
+\FPeval{\managerHourlySalary}{round(\managerSalary / \hoursPerMonth, 2)}
+\FPeval{\managerCost}{round(\managerAmountOfHours * \managerHourlySalary, 2)}
+
+\FPeval{\costSum}{round(\devCost + \testCost + \managerCost, 2)}
+\FPeval{\costBonuses}{round(\costSum * 0.2, 2)}
+\FPeval{\costTotal}{round(\costSum + \costBonuses, 2)}
 
 % МетУказ ТЭО ДП 2025
 % Если в столбце таблицы у всех значений отсутствует дробная часть,
 % дописывать нули после запятой не надо.
 
-
 \bgroup
 \def\arraystretch{1.5}
 \begin{table}
+\caption{Расчёт основной заработной платы команды разработчиков}
+\label{table:kysymys}
 \nohyphens{
 	\begin{tabular}{| p{3.5cm} | p{3.5cm} | c | c | c | c |}
 		\hline 
@@ -179,17 +194,44 @@ which results in ability to use cheaper hardware resulting in more profits.
 			{\centering Сумма, р.}}}
 		\\ \hline 
 
-		Инженер программист
+		Руководитель проекта
+		& Координация работы, контроль сроков и этапов разработки
+		& \num{\managerSalary}
+		& \num{\managerHourlySalary}
+		& \num{\managerAmountOfHours}
+		& \num{\managerCost}
+		\\ \hline 
+
+		Инженер программист 
 		& Разработка программного средства  
 		& \num{\devSalary}
-		& \num{\hourlySalary}
-		& \num{\amountOfHours}
+		& \num{\devHourlySalary}
+		& \num{\devAmountOfHours}
 		& \num{\devCost}
 		\\ \hline 
+
+		Специалист по тестированию программного обеспечения
+		& Тестирование программного средства
+		& \num{\testSalary}
+		& \num{\testHourlySalary}
+		& \num{\testAmountOfHours}
+		& \num{\testCost}
+		\\ \hline 
+
+		\multicolumn{5}{|l|}{Итого}
+		& \num{\costSum}
+		\\ \hline
+
+		\multicolumn{5}{|l|}{Премия (20\%)}
+		& \num{\costBonuses}
+		\\ \hline
+
+		\multicolumn{5}{|l|}{Итого затраты на основную заработную плату
+		разработчиков}
+		& \num{\costTotal}
+		\\ \hline
 	\end{tabular}
 }
-\caption{Исходные данные}
-\label{table:kysymys}
 \end{table}
 \egroup
 
