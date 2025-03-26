@@ -109,13 +109,16 @@ which results in ability to use cheaper hardware resulting in more profits.
 
 \begin{equation}
 	\label{eq:зарплата}
-	\text{з}_o = \sum_{i=0}^{n} \text{З}_{\text{ч}i} \cdot t_i
+	\text{З}_o = \text{К}_{\text{пр}}\sum_{i=0}^{n} \text{З}_{\text{ч}i} \cdot t_i
+	\ \text{,}
 \end{equation}
 
 
 \begin{explanationx}
 	\item[где]  $n$  -- категории исполнителей, занятых разработкой
 		программного средства;
+	\item $\text{К}_\text{пр}$ - коэффициент премий и иных стимулирующих
+		выплат (\num{1.3});
 	\item $\text{З}_\text{ч}$ --  Часовой оклад исполнителя $i\text{-й}$
 		категории, руб.;
 	\item $t$  -- трудоёмкость работ, выполняемых исполнителем $i\text{-й}$
@@ -147,10 +150,10 @@ which results in ability to use cheaper hardware resulting in more profits.
 
 На основании плановых данных был выполнен расчет основной заработной платы
 команды разработчиков, результаты которого приведены в таблице
-\ref{table:kysymys}.
+\ref{table:initialCost}.
 
 
-\def \devSalary {3100.00}
+\def \devSalary {2700.00}
 \def \devAmountOfHours {458}
 \FPeval{\devHourlySalary}{round(\devSalary / \hoursPerMonth, 2)}
 \FPeval{\devCost}{round(\devAmountOfHours * \devHourlySalary, 2)}
@@ -160,7 +163,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 \FPeval{\testHourlySalary}{round(\testSalary / \hoursPerMonth, 2)}
 \FPeval{\testCost}{round(\testAmountOfHours * \testHourlySalary, 2)}
 
-\def \managerSalary {3000.00}
+\def \managerSalary {2500.00}
 \def \managerAmountOfHours {120}
 \FPeval{\managerHourlySalary}{round(\managerSalary / \hoursPerMonth, 2)}
 \FPeval{\managerCost}{round(\managerAmountOfHours * \managerHourlySalary, 2)}
@@ -177,7 +180,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 \def\arraystretch{1.5}
 \begin{table}
 \caption{Расчёт основной заработной платы команды разработчиков}
-\label{table:kysymys}
+\label{table:initialCost}
 \nohyphens{
 	\begin{tabular}{| p{3.5cm} | p{3.5cm} | c | c | c | c |}
 		\hline 
@@ -235,10 +238,131 @@ which results in ability to use cheaper hardware resulting in more profits.
 \end{table}
 \egroup
 
+\subsubsection{}
+Расчёт затрат на дополнительную заработную плату команды разработчиков
+Затраты на дополнительную заработную плату команды разработчиков включают
+выплаты, предусмотренные законодательство о труде (оплата трудовых отпусков,
+льготных часов, времени выполнения государственных обязанностей и других выплат,
+не связанных с основной деятельностью исполнителей), и определяются по формуле
 
-\subsection{Оценка результата от использования программного средства}
-В результате технико-экономического обоснования разработки \appname{} 
-были получены следующие экономические показатели:
+\begin{equation}
+	\text{З}_\text{д} = \frac{\text{З}_\text{о} \cdot \text{Н}_\text{д}}{100}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+	\item[где] $\text{З}_\text{о}$ -- затраты на основную заработную плату;
+	\item $\text{Н}_\text{д}$ -- норматив дополнительной заработной платы
+		(15\%).
+\end{explanationx}
+
+Дополнительная заработная плата составит
+
+\FPeval{\additionalSalary}{round(\costTotal * 0.15, 2)}
+
+\begin{equation}
+	\text{З}_\text{о} = \frac{\num{\costTotal} \cdot 15}{100} =
+	\num{\additionalSalary}
+	\ \text{.}
+\end{equation}
+
+
+Отчисления на социальные нужды определяются по формуле
+
+\begin{equation}
+	\text{Р}_\text{соц} = \frac{(\text{З}_\text{о} + \text{З}_\text{д} \cdot
+	\text{Н}_\text{соц})}{100}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+	\item[где] $\text{Н}_\text{соц}$ -- норматив отчислений от фонда оплаты
+		труда (35\%).
+\end{explanationx}
+
+Отчисления на социальные нужды составят
+
+\FPeval{\socialCost}{round((\costTotal + \additionalSalary) * 0.35, 2)}
+\begin{equation}
+	\text{}_\text{} = \frac{(\num{\costTotal} + \num{\additionalSalary}) \cdot
+	35}{100} = \num{\socialCost}
+	\ \text{.}
+\end{equation}
+
+Прочие затраты рассчитываются по формуле
+
+\begin{equation}
+	\text{Р}_\text{пз} = \frac{\text{З}_\text{о} \cdot \text{Н}_\text{пз}}{100}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+\item[где] $\text{Н}_\text{пз}$ -- норматив прочих затрат, 35\%.
+\end{explanationx}
+
+Прочие затраты составляют
+
+\FPeval{\etcCost}{round(\costTotal * 0.35, 2)}
+\begin{equation}
+	\text{Р}_\text{пз} = \frac{\num{\costTotal} \cdot 35}{100} = \num{\etcCost}
+	\ \text{.}
+\end{equation}
+
+Общая сумма затрат на разработку рассчитывается по формуле
+\begin{equation}
+	\text{З}_\text{общ} = 
+	\text{З}_\text{о} +
+	\text{З}_\text{д} +
+	\text{Р}_\text{соц} +
+	\text{Р}_\text{пз}
+	\ \text{.}
+\end{equation}
+
+\FPeval{\finalCost}{round(\costTotal + \additionalSalary + \socialCost +
+\etcCost, 2)}
+
+Расчёт затрат на разработку программного продукта предоставлен в таблице
+\ref{table:totalCost}
+
+\begin{table}
+	\caption{Затраты на разработку программного обеспечения}
+	\label{table:totalCost}
+	\begin{tabular}{|c|c|}
+		\hline
+		Наименование статьи затрат
+		& Значение, р.
+		\\ \hline
+
+		1. Основная заработная плата разработчиков
+		& \num{\costTotal}
+		\\ \hline
+
+		2. Дополнительная заработная плата разработчиков
+		& \num{\additionalSalary}
+		\\ \hline
+
+		3. Отчисления на социальные нужды
+		& \num{\socialCost}
+		\\ \hline
+
+		4. Прочие затраты
+		& \num{\etcCost}
+		\\ \hline
+
+		Общая сумма инвестиций в разработку
+		& \num{\finalCost}
+		\\ \hline
+	\end{tabular}
+\end{table}
+
+
+
+\subsection{Экономический эффект от разработки программного обеспечения по
+индивидуальному заказу}
+Экономический эффект измеряется разностью между денежным доходом от деятельности
+и денежным расходам на осуществление деятельности.
+
+В результате технико-экономического обоснования разработки \appname{} .
 
 \bibliography{test}
 \end{document}
