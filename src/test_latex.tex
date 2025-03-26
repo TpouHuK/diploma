@@ -36,7 +36,6 @@
 
 \section{Анализ прототипов, литературных источников и формирование требований
 к проектированию программному средству}
-\cite{thrun2006probalistic}
 
 
 \section{Анализ требований к программному средству и разработка функциональных
@@ -79,16 +78,14 @@
 \end{itemize}
 
 
-В сравнении с \ros2{}, который является наиболее популярным аналогом, \appname{}
-упрощает развёртывание, требует меньше
-вычислительных ресурсов.
+В сравнении с \ros{}, который является наиболее популярным аналогом, \appname{}
+упрощает развёртывание, требует меньше вычислительных ресурсов за счёт
+минимизации затрат общения модулей путём расположения их в одном процессе
+операционной системы, что позволяет использовать менее мощное аппаратное
+обеспечение.
 
-- Single static linked binary, performance and memory consumption,
-which results in ability to use cheaper hardware resulting in more profits.
-
-
-\appname{} получает данные с датчиков, получает информацию о цели которой ей 
-необходимо достигнуть, и отправляет управляющие сигналы на ходовую часть. 
+\appname{} получает данные с датчиков, информацию о цели которой ей 
+необходимо достигнуть  и отправляет управляющие сигналы на ходовую часть. 
 Решается задача локализации, построения маршрута и выполнения маршрута 
 к заданной точке. 
 
@@ -177,7 +174,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 % дописывать нули после запятой не надо.
 
 \bgroup
-\def\arraystretch{1.5}
+\def\arraystretch{1.7}
 \begin{table}
 \caption{Расчёт основной заработной платы команды разработчиков}
 \label{table:initialCost}
@@ -185,8 +182,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 	\begin{tabular}{| p{3.5cm} | p{3.5cm} | c | c | c | c |}
 		\hline 
 		Наименование должности разработчика
-		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
-			{\centering Вид выполненной работы}}}
+		& Вид выполненной работы
 		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
 			{\centering Месячная заработная плата, р.}}}
 		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
@@ -262,7 +258,7 @@ which results in ability to use cheaper hardware resulting in more profits.
 \begin{equation}
 	\text{З}_\text{о} = \frac{\num{\costTotal} \cdot 15}{100} =
 	\num{\additionalSalary}
-	\ \text{.}
+	\ \text{р.}
 \end{equation}
 
 
@@ -284,14 +280,14 @@ which results in ability to use cheaper hardware resulting in more profits.
 \FPeval{\socialCost}{round((\costTotal + \additionalSalary) * 0.35, 2)}
 \begin{equation}
 	\text{Р}_\text{соц} = \frac{(\num{\costTotal} + \num{\additionalSalary}) \cdot
-	35}{100} = \num{\socialCost}
-	\ \text{.}
+	35}{\num{100}} = \num{\socialCost}
+	\ \text{р.}
 \end{equation}
 
 Прочие затраты рассчитываются по формуле
 
 \begin{equation}
-	\text{Р}_\text{пз} = \frac{\text{З}_\text{о} \cdot \text{Н}_\text{пз}}{100}
+	\text{Р}_\text{пз} = \frac{\text{З}_\text{о} \cdot \text{Н}_\text{пз}}{\num{100}}
 	\ \text{,}
 \end{equation}
 
@@ -299,12 +295,12 @@ which results in ability to use cheaper hardware resulting in more profits.
 \item[где] $\text{Н}_\text{пз}$ -- норматив прочих затрат, 35\%.
 \end{explanationx}
 
-Прочие затраты составляют
+Прочие затраты составят
 
 \FPeval{\etcCost}{round(\costTotal * 0.35, 2)}
 \begin{equation}
-	\text{Р}_\text{пз} = \frac{\num{\costTotal} \cdot 35}{100} = \num{\etcCost}
-	\ \text{.}
+	\text{Р}_\text{пз} = \frac{\num{\costTotal} \cdot \num{35}}{\num{100}} = \num{\etcCost}
+	\ \text{р.}
 \end{equation}
 
 Общая сумма затрат на разработку рассчитывается по формуле
@@ -355,40 +351,135 @@ which results in ability to use cheaper hardware resulting in more profits.
 \end{table}
 
 
-\FloatBarrier
-
 \subsection{Экономический эффект от разработки программного обеспечения по
 индивидуальному заказу}
-Использование данного программного средства позволяет использовать более дешёвое
-аппаратное обеспечение. Так как навигация и SLAM являются ресурсоёмкими
-операциями, обычно используют компьютер NVIDIA~Jetson~Nano, стоимостью
-\num{1421.83} р. \appname{} позволяет использовать Banana~Pi~CM4, стоимостью
-\num{300.12} р.
-\FPeval{\savingsResult}{round(1421.83 - 300.12, 2)}
-
-\def \robotCount {30}
-\FPeval{\costWin}{round(\robotCount * \savingsResult, 2)}
-Это позволяет экономить \num{\savingsResult} р. на единицу продукции.
-Взяв партию из \num{\robotCount} мобильных систем, мы получаем выгоду для
-организации-заказчика
-в \num{\costWin} р.
+\sloppy
 
 Экономический эффект для организации-заказчика при использовании ПО
 высчитывается по формуле
 \begin{equation}
-	\Delta\text{П}_\text{ч} = (\text{Э}_\text{з} - \Delta\text{З}_\text{тек})
-	\cdot (1 - \frac{\text{Н}_\text{п}}{100})
+	\Delta\text{П}_\text{ч} = (\text{Э}_\text{з} - \text{И}_\text{разр} -\Delta\text{З}_\text{тек})
+	\cdot (1 - \frac{\text{Н}_\text{п}}{\num{100}})
 	\ \text{,}
 \end{equation}
+
+\def \nalogNaPribil{20}
+
 \begin{explanationx}
 	\item[где] $\text{Э}_\text{з}$ -- экономия текущих затрат, полученная в
 		результате применения ПО, р.;
+	\item $\text{И}_\text{разр}$ -- затраты на разработку программного
+		обеспечения, р.
 	\item $\Delta\text{З}_\text{тек}$ -- прирост текущих затрат, связанных с
 		использованием ПО, р.;
 	\item $\text{Н}_\text{п}$ -- ставка налога на прибыль согласно действующему
-	законодательству (13\%).
+	законодательству (\nalogNaPribil\%).
 \end{explanationx}
 
+% Дополнительная стоимость для сопровождения, в процентах
+\def \additionalSupportCost {10}
+\FPeval{\supportCost}{round(\finalCost * \additionalSupportCost / 100, 2)}
+Прирост текущих затрат примем за \num{\additionalSupportCost}\% от затрат на
+разработку ПО, что составит
+\begin{equation}
+	\text{З}_\text{тек} = \num{\finalCost} \cdot
+	\frac{\num{\additionalSupportCost}}{\num{100}} = \num{\supportCost}
+	\ \text{р.}
+\end{equation}
 
+Использование данного программного средства позволяет использовать более дешёвое
+аппаратное обеспечение. Так как навигация и SLAM являются ресурсоёмкими
+операциями, обычно используют компьютер \linebreak{} \hfill{}
+NVIDIA~Jetson~Nano, стоимостью \num{1421.83} р.,
+в то время как \appname{} позволяет использовать
+Banana~Pi~CM4, стоимостью \num{300.12} р.
+
+\FPeval{\savingsResult}{round(1421.83 - 300.12, 2)}
+\def \robotCount {35}
+\FPeval{\costWin}{round(\robotCount * \savingsResult, 2)}
+
+Это позволяет экономить \num{\savingsResult} р. на единицу продукции.
+Взяв в расчёт что заказчик производит в год \num{\robotCount} мобильных систем,
+мы получаем экономию текущих затрат для организации-заказчика в \num{\costWin} р.
+
+\FPeval{\totalWin}{round((\costWin - \supportCost - \finalCost) * (1 -
+0.\nalogNaPribil), 2)}
+
+Экономический эффект для организации-заказчика при использовании ПО и выпуске
+партии в \num{\robotCount} единиц составляет
+\begin{equation}
+	\Delta\text{П}_\text{ч} = (\num{\costWin} - \num{\finalCost} - \num{\supportCost}) \cdot
+	(\num{1} - \frac{\num{\nalogNaPribil}}{\num{100}}) = \num{\totalWin}
+	\ \text{р.}
+\end{equation}
+
+Рентабельность затрат высчитывается по формуле
+\begin{equation}
+	\text{У}_\text{р} = \frac{\Delta\text{П}_\text{ч}}{\text{И}_\text{разр}}
+\cdot \num{100}
+	\ \text{,}
+\end{equation}
+
+и она составляет
+
+\FPeval{\rentabelnost}{round(\totalWin / \finalCost * 100, 2)}
+\begin{equation}
+	\text{У}_\text{р} = \frac{\num{\totalWin}}{\num{\finalCost}} \cdot \num{100}
+	= \num{\rentabelnost}\%
+	\ \text{.}
+\end{equation}
+
+Поскольку средняя процентная ставка по банковским депозитным вкладам на
+январь 2025-го г. не превышает \num{13.76}\% \cite{nbrb2025}, данный проект
+программного средства навигации мобильных систем является экономический
+эффективным, разработка и последующая продажа программного продукта являются
+экономически целесообразными.
+
+\subsection{Расчёт показателей эффективности инвестиций в разработку ПО}
+Размер инвестиций в разработку ПО составляет \num{\finalCost} р., годовой
+экономический эффект составляет \num{\totalWin} р.
+
+Сумма инвестиций больше суммы годового экономического эффекта, значит
+экономическая целесообразность инвестиций в разработку и использование
+программного продукта осуществляется на основе расчёта и оценки следующих
+показателей:
+\begin{itemize}
+	\item чистый дисконти́рованный доход ($\text{ЧДД}$);
+	\item срок окупаемости инвестиций ($\text{Т}_\text{ок}$);
+	\item рентабельность инвестиций ($\text{Р}_\text{и}$).
+\end{itemize}
+Чтобы сравнить разновременные результаты и затраты, необходимо их привести к
+единому моменту времени -- началу расчётного периода, что обеспечивает их
+сопоставимость.
+
+Для этого используем дисконтирование, путём умножения соответствующих
+результатов и затрат на коэффициент дисконтирования соответствующего года $t$,
+который определяется по формуле
+
+\begin{equation}
+	\alpha = \frac{\num{1}}{(\num{1} + \text{Е}_\text{н})^{t - t_\text{р}}}
+	% \alpha = \frac{\num{1}}{ (\num{1} + \text{Е}_\text{н}^\text{t - t_\text{р}}) }
+\end{equation}
+\begin{explanationx}
+\item[где] - $\text{Е}_\text{н}$ - норма дисконта (в долях единиц), равная или
+	больше средней процентной ставки по банковским депозитам
+\end{explanationx}
+
+В результате технико-экономического обоснования разработки программного
+средства навигации мобильных систем были получены следующие экономические
+показатели: рентабельность составляющая \num{\rentabelnost}\%, что существенно
+превышает среднюю процентную ставку по банковским депозитным вкладам на январь
+2025-го г. (ставка составляет \num{13,76}\%) \cite{nbrb2025}. Рентабельность
+рассчитана при условии что осуществляется продажа \num{\robotCount} единиц
+продукции в год. 
+
+Прогнозируемая сумма затрат на разработку программного продукта
+составляет \num{\finalCost}~р. Экономический эффект программного
+средства был предварительно оценён в сумму \num{\savingsResult}~р. Исходя из
+данных показателей, можно сделать вывод о целесообразности разработки данного
+проекта.
+
+
+\renewcommand{\bibsection}{\sectioncentered*{Список использованной литературы}}
 \bibliography{test}
 \end{document}
