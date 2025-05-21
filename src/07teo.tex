@@ -1,0 +1,413 @@
+\section{Технико-экономическое обоснование разработки и использования
+программного средства навигации мобильных систем}
+
+\subsection{Характеристика программного средства}
+Программное средство навигации мобильных систем осуществляет задачу перемещения
+и определения местоположения мобильной системы, построение и исполнение 
+маршрута с использованием сенсоров и приводов. \appname{} оптимизировано для
+навигации голономных колёсных роботов. Предполагается что мобильная система 
+управляется через отправку команды установки угловой и линейной скорости. 
+Также необходима конфигурация под размеры и движение каждого определённого
+робота.
+
+\appname{} выполняет следующие функции:
+
+\begin{itemize}
+	\item сбор данных с датчиков;
+	\item расчёт текущей позиции;
+	\item построение карты;
+	\item сохранение и загрузка карты;
+	\item планирование маршрута;
+	\item планирование движения;
+	\item исполнение маршрута, учитывая динамические препятствия.
+\end{itemize}
+
+
+В сравнении с \ros{}, который является наиболее популярным аналогом, \appname{}
+упрощает развёртывание, требует меньше вычислительных ресурсов за счёт
+минимизации затрат на общении модулей путём расположения их в одном процессе
+операционной системы, что позволяет использовать менее мощное аппаратное
+обеспечение.
+
+\appname{} получает данные с датчиков, информацию о цели которой ей 
+необходимо достигнуть  и отправляет управляющие сигналы на ходовую часть. 
+Решается задача локализации, построения маршрута и выполнения маршрута 
+к заданной точке. 
+
+\subsection{Расчёты затрат на разработку программного средства}
+
+Расчет затрат на разработку ПО производится в разрезе следующих статей затрат:
+
+\begin{itemize}
+	\item затраты на основную заработную плату разработчиков;
+	\item затраты на дополнительную заработную плату разработчиков;
+	\item отчисления на социальные службы;
+	\item прочие затраты (амортизационные отчисления, расходы на 
+		электроэнергию, командировочные расходы, арендная плата за офисные
+		помещения и оборудование, расходы на управление и реализацию и т. п.).
+\end{itemize}
+
+Расчёт основной заработной платы осуществляется по формуле
+
+\begin{equation}
+	\label{eq:зарплата}
+	\text{З}_o = \text{К}_{\text{пр}}\sum_{i=0}^{n} \text{З}_{\text{ч}i} \cdot t_i
+	\ \text{,}
+\end{equation}
+
+
+\begin{explanationx}
+	\item[где]  $n$  -- категории исполнителей, занятых разработкой
+		программного средства;
+	\item $\text{К}_\text{пр}$ - коэффициент премий и иных стимулирующих
+		выплат (\num{1.3});
+	\item $\text{З}_\text{ч}$ --  Часовой оклад исполнителя $i\text{-й}$
+		категории, р.;
+	\item $t$  -- трудоёмкость работ, выполняемых исполнителем $i\text{-й}$
+		категории, ч.
+\end{explanationx}
+
+
+Затраты на основную заработную плату команды разработчиков
+делятся исходя из численности, состава команды (категорий исполнителей), 
+размеров месячной заработной платы каждого из участников команды, а также
+общей трудоёмкости разработки ПО. 
+
+\def \hoursPerMonth {167}
+
+Согласно постановлению Министерства труда и социальной защиты Республики
+Беларусь от 15 ноября 2024 г. \No 67 «Об установлении расчетной нормы рабочего
+времени на 2024 год» при полной норме продолжительности рабочего времени на
+2025 год для пятидневной рабочей недели с выходными днями в субботу и
+воскресенье расчетная норма рабочего времени составит \num{2007} ч. На основании
+этих данных среднее количество рабочих ч. в месяце принято равным
+\hoursPerMonth{} ч.
+
+Трудоёмкость определялась на основе сложности разработки программного средства,
+объема функций. За основу в том числе брались фактические значения трудоёмкости
+работ при разработке ПО со схожим функционалом в месте прохождения 
+преддипломной практики.
+
+Для расчёта возьмём размер премии 20\%.
+
+На основании плановых данных был выполнен расчет основной заработной платы
+команды разработчиков, результаты которого приведены в таблице~\ref{table:initialCost}.
+
+\def \devSalary {2700}
+\def \devAmountOfHours {458}
+\FPeval{\devHourlySalary}{round(\devSalary / \hoursPerMonth, 2)}
+\FPeval{\devCost}{round(\devAmountOfHours * \devHourlySalary, 2)}
+
+\def \testSalary {2100}
+\def \testAmountOfHours {200}
+\FPeval{\testHourlySalary}{round(\testSalary / \hoursPerMonth, 2)}
+\FPeval{\testCost}{round(\testAmountOfHours * \testHourlySalary, 2)}
+
+\def \managerSalary {2500}
+\def \managerAmountOfHours {120}
+\FPeval{\managerHourlySalary}{round(\managerSalary / \hoursPerMonth, 2)}
+\FPeval{\managerCost}{round(\managerAmountOfHours * \managerHourlySalary, 2)}
+
+\FPeval{\costSum}{round(\devCost + \testCost + \managerCost, 2)}
+\FPeval{\costBonuses}{round(\costSum * 0.2, 2)}
+\FPeval{\costTotal}{round(\costSum + \costBonuses, 2)}
+
+%\FloatBarrier
+%\bgroup
+%\def\arraystretch{1.7}
+\nohyphens{
+	\begin{longtable}{| p{3.5cm} | p{3.5cm} | l | l | l | r |}
+		\caption{Расчёт основной заработной платы команды разработчиков}
+		\label{table:initialCost} \\
+		\hline 
+		Наименование должности разработчика
+		& Вид выполненной работы
+		%& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
+		%	{\centering Вид выполненной работы}}}
+		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
+			{\centering Месячная заработная плата, р.}}}
+		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
+			{\centering Часовая заработная плата, р.}}}
+		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
+			{\centering Трудоёмкость работ, ч}}}
+		& \raisebox{-2cm}{\rotatedtext{\parbox{3.5cm}
+			{\centering Сумма, р.}}}
+		\\ \hline 
+		\endfirsthead
+
+		Руководитель проекта
+		& Координация работы, контроль сроков и этапов разработки
+		& \num{\managerSalary}
+		& \num{\managerHourlySalary}
+		& \num{\managerAmountOfHours}
+		& \num{\managerCost}
+		\\ \hline 
+
+		Инженер-программист 
+		& Разработка программного средства  
+		& \num{\devSalary}
+		& \num{\devHourlySalary}
+		& \num{\devAmountOfHours}
+		& \num{\devCost}
+		\\ \hline 
+
+		Специалист по тестированию программного обеспечения
+		& Тестирование программного средства
+		& \num{\testSalary}
+		& \num{\testHourlySalary}
+		& \num{\testAmountOfHours}
+		& \num{\testCost}
+		\\ \hline 
+
+		\multicolumn{5}{|l|}{Итого}
+		& \num{\costSum}
+		\\ \hline
+
+		\multicolumn{5}{|l|}{Премия (20\%)}
+		& \num{\costBonuses}
+		\\ \hline
+
+		\multicolumn{5}{|l|}{Общая сумма затрат на разработку}
+		& \num{\costTotal}
+		\\ \hline
+	\end{longtable}
+}
+%\end{table}
+%\egroup
+%\FloatBarrier
+
+Расчёт затрат на дополнительную заработную плату команды разработчиков.
+
+Затраты на дополнительную заработную плату команды разработчиков включают
+выплаты, предусмотренные законодательство о труде (оплата трудовых отпусков,
+льготных ч., времени выполнения государственных обязанностей и других выплат,
+не связанных с основной деятельностью исполнителей), и определяются по формуле
+
+\begin{equation}
+	\text{З}_\text{д} = \frac{\text{З}_\text{о} \cdot
+	\text{Н}_\text{д}}{\num{100}}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+	\item[где] $\text{З}_\text{о}$ -- затраты на основную заработную плату;
+	\item $\text{Н}_\text{д}$ -- норматив дополнительной заработной платы
+		(\num{15}\%).
+\end{explanationx}
+
+Дополнительная заработная плата составит
+
+\FPeval{\additionalSalary}{round(\costTotal * 0.15, 2)}
+
+\begin{equation}
+	\text{З}_\text{о} = \frac{\num{\costTotal} \cdot \num{15}}{\num{100}} =
+	\num{\additionalSalary}
+	\ \text{р.}
+\end{equation}
+
+
+Отчисления на социальные нужды определяются по формуле
+
+\begin{equation}
+	\text{Р}_\text{соц} = \frac{(\text{З}_\text{о} + \text{З}_\text{д}) \cdot
+	\text{Н}_\text{соц}}{\num{100}}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+	\item[где] $\text{Н}_\text{соц}$ -- норматив отчислений от фонда оплаты
+		труда (35\%).
+\end{explanationx}
+
+Отчисления на социальные нужды составят
+
+\FPeval{\socialCost}{round((\costTotal + \additionalSalary) * 0.35, 2)}
+\begin{equation}
+	\text{Р}_\text{соц} = \frac{(\num{\costTotal} + \num{\additionalSalary}) \cdot
+	\num{35}}{\num{100}} = \num{\socialCost}
+	\ \text{р.}
+\end{equation}
+
+Прочие затраты рассчитываются по формуле
+
+\begin{equation}
+	\text{Р}_\text{пз} = \frac{\text{З}_\text{о} \cdot \text{Н}_\text{пз}}{\num{100}}
+	\ \text{,}
+\end{equation}
+
+\begin{explanationx}
+\item[где] $\text{Н}_\text{пз}$ -- норматив прочих затрат, 35\%.
+\end{explanationx}
+
+Прочие затраты составят
+
+\FPeval{\etcCost}{round(\costTotal * 0.35, 2)}
+\begin{equation}
+	\text{Р}_\text{пз} = \frac{\num{\costTotal} \cdot \num{35}}{\num{100}} = \num{\etcCost}
+	\ \text{р.}
+\end{equation}
+
+Общая сумма затрат на разработку рассчитывается по формуле
+\begin{equation}
+	\text{З}_\text{общ} = 
+	\text{З}_\text{о} +
+	\text{З}_\text{д} +
+	\text{Р}_\text{соц} +
+	\text{Р}_\text{пз}
+	\ \text{.}
+\end{equation}
+
+\FPeval{\finalCost}{round(\costTotal + \additionalSalary + \socialCost +
+\etcCost, 2)}
+
+Расчёт затрат на разработку программного продукта предоставлен в таблице~\ref{table:totalCost}
+
+\FloatBarrier
+\begin{table}
+	\caption{Затраты на разработку программного обеспечения}
+	\label{table:totalCost}
+	\begin{tabular}{|l|r|}
+		\hline
+		Наименование статьи затрат
+		& Значение, р.
+		\\ \hline
+
+		1. Основная заработная плата разработчиков
+		& \num{\costTotal}
+		\\ \hline
+
+		2. Дополнительная заработная плата разработчиков
+		& \num{\additionalSalary}
+		\\ \hline
+
+		3. Отчисления на социальные нужды
+		& \num{\socialCost}
+		\\ \hline
+
+		4. Прочие затраты
+		& \num{\etcCost}
+		\\ \hline
+
+		Общая сумма инвестиций в разработку
+		& \num{\finalCost}
+		\\ \hline
+	\end{tabular}
+\end{table}
+\FloatBarrier
+
+\subsection{Экономический эффект от разработки программного обеспечения и
+применения программного обеспечения для собственных нужд}
+
+В общем виде экономический эффект при использовании ПО рассчитывается по формуле
+по формуле
+\begin{equation}
+	\Delta\text{П}_\text{ч} = (\text{Э}_\text{з} - \text{И}_\text{разр} -\Delta\text{З}_\text{тек})
+	\cdot (1 - \frac{\text{Н}_\text{п}}{\num{100}})
+	\ \text{,}
+\end{equation}
+
+\def \nalogNaPribil{20}
+
+\begin{explanationx}
+	\item[где] $\text{Э}_\text{з}$ -- экономия текущих затрат, полученная в
+		результате применения ПО, р.;
+	\item $\text{И}_\text{разр}$ -- затраты на разработку программного
+		обеспечения, р.
+	\item $\Delta\text{З}_\text{тек}$ -- прирост текущих затрат, связанных с
+		поддержкой и сопровождением ПО, р.;
+	\item $\text{Н}_\text{п}$ -- ставка налога на прибыль согласно действующему
+	законодательству (\nalogNaPribil\%).
+\end{explanationx}
+
+% Дополнительная стоимость для сопровождения, в процентах
+\def \additionalSupportCost {10}
+\FPeval{\supportCost}{round(\finalCost * \additionalSupportCost / 100, 2)}
+Прирост текущих затрат, связанных с сопровождением и поддержкой ПО, примем за
+\num{\additionalSupportCost}\% от затрат на разработку ПО, что составит
+\begin{equation}
+	\text{З}_\text{тек} = \num{\finalCost} \cdot
+	\frac{\num{\additionalSupportCost}}{\num{100}} = \num{\supportCost}
+	\ \text{р.}
+\end{equation}
+
+% TODO, использование заменить на применение, но это уже было согласовано и абобус
+
+Использование данного программного средства позволяет использовать более дешёвое
+аппаратное обеспечение. Так как навигация и SLAM являются ресурсоёмкими
+операциями, обычно используют компьютер \linebreak{} \hfill{}
+NVIDIA~Jetson~Nano, стоимостью \num{1421.83} р.,
+в то время как \appname{} позволяет использовать
+Banana~Pi~CM4, стоимостью \num{300.12} р.
+
+\FPeval{\savingsResult}{round(1421.83 - 300.12, 2)}
+\def \robotCount {40}
+\FPeval{\costWin}{round(\robotCount * \savingsResult, 2)}
+
+Это позволяет экономить \num{\savingsResult} р. на единицу продукции.
+Если взять в расчёт что в год производится  \num{\robotCount} мобильных систем,
+получаем экономию текущих затрат в \num{\costWin} р.
+
+\FPeval{\totalWin}{round((\costWin - \supportCost - \finalCost) * (1 -
+0.\nalogNaPribil), 2)}
+
+Экономический эффект для организации-заказчика при использовании ПО и выпуске
+партии в \num{\robotCount} единиц составляет
+\begin{equation}
+	\Delta\text{П}_\text{ч} = (\num{\costWin} - \num{\finalCost} - \num{\supportCost}) \cdot
+	(\num{1} - \frac{\num{\nalogNaPribil}}{\num{100}}) = \num{\totalWin}
+	\ \text{р.}
+\end{equation}
+
+Уровень рентабельность затрат рассчитывается по формуле
+\begin{equation}
+	\text{У}_\text{р} = \frac{\Delta\text{П}_\text{ч}}{\text{И}_\text{разр}}
+\cdot \num{100}
+	\ \text{,}
+\end{equation}
+
+уровень рентабельности составляет
+
+\FPeval{\rentabelnost}{round(\totalWin / \finalCost * 100, 2)}
+\begin{equation}
+	\text{У}_\text{р} = \frac{\num{\totalWin}}{\num{\finalCost}} \cdot \num{100}
+	= \num{\rentabelnost}\%
+	\ \text{.}
+\end{equation}
+
+
+\def \stavkaBankov {0.1376}
+
+В результате расчёта были получены следующие показатели (см.~табл.~
+\bgroup
+\def\arraystretch{1.2}
+\ref{table:hehelastone})
+	\begin{longtable}{|p{10cm}|c|}
+		\caption{Экономические показатели}  \label{table:hehelastone} \\
+		\hline
+		Наименование показателя
+		& Значение
+		\\ \hline
+
+		Прогнозируемая сумма затрат на разработку программного продукта
+		& \num{\finalCost}~р.
+		\\ \hline
+
+		Прирост чистой прибыли
+		& \num{\totalWin}~р.
+		\\ \hline
+
+		Рентабельность инвестиций
+		& \num{\rentabelnost}\%
+		\\ \hline
+	\end{longtable}
+\egroup
+
+
+
+Средняя процентная ставка по банковским депозитным вкладам на январь
+2025-го г. не превышает \num{13.76}\% \cite{nbrb2025}, рентабельность инвестиций
+в проект составляет \num{\rentabelnost}\%. Инвестиции в разработку проекта
+окупятся за первый год реализации проекта. Это означает, что данный проект
+программного средства навигации мобильных систем является экономический
+эффективным, разработка и последующая продажа программного продукта являются
+экономически целесообразными.
