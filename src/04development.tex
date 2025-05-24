@@ -25,3 +25,175 @@
 
 
 
+
+
+\subsection{Разработка UFK}
+
+
+
+\subsection{Разработка модуля оценки состояния}
+
+\begin{lstlisting}
+pub type FilterState = ukf::FilterState<
+    ACCEL_MODEL_STATE_SIZE,
+    MEASUREMENT_SIZE,
+    ACCELERATION_MODEL_SIGMA_ORDER
+>;
+
+pub type KallmanFilter = ukf::KallmanFilter<
+    ACCEL_MODEL_STATE_SIZE,
+    MEASUREMENT_SIZE,
+    ACCELERATION_MODEL_SIGMA_ORDER,
+>;
+
+pub struct MotionEstimation {
+    pub config: MotionEstimationConfig,
+    pub states: Vec<FilterState>,
+    pub events: Vec<SensorEvent>,
+    pub last_control_input: Option<ControlInput>,
+    pub ukf_filter: KallmanFilter,
+    pub imu_filter: Option<ImuFilter>,
+}
+\end{lstlisting}
+
+
+\begin{lslisting}
+fn apply_event(
+    &mut self,
+    event: SensorEvent,
+    observation_time: SystemTime,
+) -> Result<(), LocalizationError> {
+    let dt_secs = event
+        .arrival_time()
+        .duration_since(observation_time)
+        .inspect_err(|_cause| {
+            log::error!(
+                "Reversed time for event={:?} with obs_time={:?}",
+                event,
+                observation_time
+            );
+        })
+        .expect("Time goes in reverse order")
+        .as_secs_f32()
+        .max(0.001);
+
+    let mut indices = Vec::<usize>::new();
+    let mut meas_matrix = SVector::<f32, MEASUREMENT_SIZE>::zeros();
+
+    match event {
+        SensorEvent::MatchedPose(data) => {
+            meas_matrix[SCAN_X] = data.coords.x;
+            meas_matrix[SCAN_Y] = data.coords.y;
+            meas_matrix[SCAN_THETA] = data.heading_rad;
+
+            indices.push(SCAN_X);
+            indices.push(SCAN_Y);
+            indices.push(SCAN_THETA);
+
+            self.imu_filter = None;
+        }
+
+	SensorEvent::Imu(data) => {
+            let mut filter: ImuFilter =
+                self.imu_filter.take().unwrap_or_else(|| {
+                    ImuFilter::new(
+                        self.config.epoch_duration_ms as f32 / 1000.0,
+                        &self.get_estimated_state_unchecked(),
+                        &self.config.noise,
+                    )
+                })
+            filter.predict(dt_secs)?;
+            filter.update(
+                    dt_secs,
+                    self.config.params.imu_filter,
+                    &self.config.noise,
+		    data
+            )?;
+	    return Ok(());
+        }
+
+        SensorEvent::GpsCoords(data) => {
+            meas_matrix[GPS_X] = data.coords.x;
+            meas_matrix[GPS_Y] = data.coords.y;
+
+            indices.push(GPS_X);
+            indices.push(GPS_Y);
+        }
+    }
+
+    let transform = build_dyn_transform(&indices);
+
+    let _ = self.predict(dt_secs)?;
+
+    self.ukf_filter.update(
+        &meas_matrix.transpose(),
+        Some(transform),
+        UpdateConfig {
+            state_to_meas,
+            mean_transform: meas_mean,
+            meas_sub: meas_residual,
+            state_sub: state_residual,
+        },
+    )?;
+
+    Ok(())
+}
+\end{lslisting}
+
+
+\begin{lslisting}
+fn meas_residual(
+    m1: SMatrixView<f32, 1, MEASUREMENT_SIZE>,
+    m2: SMatrixView<f32, 1, MEASUREMENT_SIZE>,
+) -> SMatrix<f32, 1, MEASUREMENT_SIZE> {
+    let mut m = m1 - m2;
+    m[SCAN_THETA] = normalize_angle(m[SCAN_THETA]);
+    m[IMU_THETA] = normalize_angle(m[IMU_THETA]);
+    m
+}
+
+
+fn meas_mean(
+    weights: SMatrixView<f32, 1, ACCELERATION_MODEL_SIGMA_ORDER>,
+    sigmas: SMatrixView<f32, ACCELERATION_MODEL_SIGMA_ORDER, MEASUREMENT_SIZE>,
+) -> SMatrix<f32, 1, MEASUREMENT_SIZE> {
+    let column = sigmas.column(SCAN_THETA).transpose();
+
+    let sum_sin = weights.dot(&column.map(f32::sin));
+    let sum_cos = weights.dot(&column.map(f32::cos));
+
+    let lidar_theta = f32::atan2(sum_sin, sum_cos);
+
+    let column = sigmas.column(IMU_THETA).transpose();
+
+    let sum_sin = weights.dot(&column.map(f32::sin));
+    let sum_cos = weights.dot(&column.map(f32::cos));
+
+    let imu_theta = f32::atan2(sum_sin, sum_cos);
+
+    let x = weights.dot(&sigmas.column(SCAN_X).transpose());
+    let y = weights.dot(&sigmas.column(SCAN_Y).transpose());
+
+    let gps_x = weights.dot(&sigmas.column(GPS_X).transpose());
+    let gps_y = weights.dot(&sigmas.column(GPS_Y).transpose());
+
+    SMatrix::from_row_slice(&[
+        x,
+        y,
+        lidar_theta,
+        imu_theta,
+        imu_v_theta,
+        imu_a_x,
+        imu_a_y,
+        gps_x,
+        gps_y,
+        compass_theta,
+    ])
+}
+\end{lslisting}
+
+\subsection{Глобальный планировщик}
+
+
+
+\subsection{Локальный планировщик}
