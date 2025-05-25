@@ -199,6 +199,7 @@
 \DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
 
 
+
 % Зачем: Директория в которой будет происходить поиск картинок
 \graphicspath{{./images/}}
 
@@ -206,6 +207,8 @@
 % Зачем: Добавление подписей к рисункам
 \usepackage[nooneline]{caption}
 \usepackage{subcaption}
+
+
 
 % Зачем: чтобы работала \No в новых латехах
 \DeclareRobustCommand{\No}{\ifmmode{\nfss@text{\textnumero}}\else\textnumero\fi}
@@ -367,6 +370,10 @@
 % Зачем: Оформление листингов кода
 % Примечание: final нужен для переопределения режима draft, в котором листинги не выводятся в документ.
 \usepackage[final]{listings}
+\usepackage{amsmath}
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 
 % Зачем: настройка оформления листинга для языка F#
@@ -474,6 +481,7 @@
 
 % Зачем: чтобы выключать перенос слов (например в таблицах)
 \usepackage{hyphenat}
+
 
 % Зачем: Переносы в словах с тире.
 % Тире в словае заменяем на \hyph: аппаратно\hyphпрограммный.
