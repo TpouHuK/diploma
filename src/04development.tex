@@ -361,5 +361,207 @@ fn meas_mean(
 
 
 
+
 \subsection{Локальный планировщик}
 
+Формирование минимальной скорости основывает 
+на тедекции застревания:
+\begin{lstlisting}
+let mut estimate_min_velocity = || -> Result<f32, LocalPlanError> {
+    if rotation.abs() > config.stuck.rotation_tolerance
+        || dist > *config.stuck.distance_tolerance
+    {
+        world.tracker.reset_stuck();
+        return Ok(default_min_velocity);
+    }
+    let stuck_duration = world.tracker.detect_stuck();
+    if stuck_duration < config.stuck.stuck_time_tolerance {
+        return Ok(default_min_velocity);
+    }
+    log::debug!("Stuck duration {stuck_duration:?}");
+    if stuck_duration > config.stuck.max_stuck_time {
+        return Err(LocalPlanError::StuckDetected);
+    }
+
+    let elapsed = stuck_duration;
+    let max_elapsed = config.stuck.max_stuck_time;
+    let v = config.robot.min_velocity
+        + (config.robot.max_velocity - config.robot.min_velocity)
+            * elapsed.as_secs_f32()
+            / max_elapsed.as_secs_f32();
+
+    if stuck_duration > config.stuck.stuck_time_force_backward {
+        force_back_movement = true;
+        Ok(v)
+    } else {
+        Ok(config.robot.max_velocity)
+    }
+};
+
+\end{lstlisting}
+
+Оценка максимальной скорости происходит по:
+\begin{lstlisting}
+let estimate_max_velocity = |state: &RobotState| -> f32 {
+    let dist_to_goal =
+        (world.target_pose.coords - state.position.coords).norm();
+    let stop_time = dist_to_goal / config.robot.max_velocity;
+    if stop_time <= limits.deceleration_time.as_secs_f32() {
+        //slow deceleration
+        let y = limits.deceleration_time.as_secs_f32();
+        let base_pow = -y.log10() / y;
+        let pow =
+            base_pow * (limits.deceleration_time.as_secs_f32() - stop_time);
+        let output = f32::exp(pow) * config.robot.max_velocity;
+        output.clamp(config.robot.min_velocity, config.robot.max_velocity)
+    } else if motion_time < limits.acceleration_time {
+        //slow acceleration
+        let x = motion_time.as_secs_f32();
+        let a = x / limits.acceleration_time.as_secs_f32();
+        f32::max(v_min, a.powi(3) * config.robot.max_velocity)
+    } else {
+        config.robot.max_velocity
+    }
+};
+\end{lstlisting}
+
+Оценка максимальной угловой скорости происходит (c задаваемой табличной функции $\omega_{max} = F(v)$):
+\begin{lstlisting}
+impl MovementOptimization {
+    pub fn estimate_angular(&self, velocity: f32) -> f32 {
+        let model = self.model.as_ref().unwrap();
+
+        model
+            .predict(&DenseMatrix::from_2d_vec(&vec![vec![velocity]]).unwrap())
+            .unwrap()[0]
+    }
+}
+
+let estimate_max_angular = move |state: &RobotState| -> f32 {
+    let v_local = state.velocity.into_local(state.position.heading_rad);
+    optimization
+        .estimate_angular(v_local.translation.x)
+        .clamp(0.0, max_angular)
+};
+\end{lstlisting}
+
+\begin{lstlisting}
+pub fn generate_range(v_min: f32, v_max: f32, step: f32) -> Vec<f32> {
+    if v_max <= v_min {
+        return vec![v_min];
+    }
+    let count = ((v_max - v_min) / step) as usize;
+    if count <= 1 {
+        return vec![v_min];
+    }
+    let count = count.max(2);
+    (0..count).map(|i| v_min + i as f32 * step).collect()
+}
+\end{lstlisting}
+
+Метрика выравнивания по целевому углу: 
+\begin{lstlisting}
+
+pub fn target_alignment(&self, target_heading: f32) -> TrajectoryMetric {
+    Box::new(move |trajectory| {
+        let rotation = normalize_angle(
+            trajectory.finish_state().position.heading_rad - target_heading,
+        );
+        let cost = rotation.abs() / f32::consts::FRAC_PI_2;
+        Ok((MetricKind::TargetAlignment, MetricCost::new(cost)))
+    })
+}
+\end{lstlisting}
+
+Метрика кратчайшего пути
+\begin{lstlisting}
+pub fn shortest_path_metric(&self, goal: Point2<f32>) -> TrajectoryMetric {
+    Box::new(move |trajectory| {
+        let dist2 = (goal - trajectory.finish_state().position.coords)
+            .norm_squared();
+
+        Ok((MetricKind::ShortestPath, MetricCost::new(dist2)))
+    })
+}
+\end{lstlisting}
+
+
+Метрика коллизии:
+\begin{lstlisting}
+pub fn collision_metrics(
+    &self,
+    obstacles: &'a DynamicObstacles,
+    map_chunk: &'a MapChunk,
+) -> TrajectoryMetric {
+    let robot = self.robot;
+    let config = self.planner_config;
+    Box::new(move |trajectory| {
+        for state in trajectory.states.iter() {
+            let state_shape = robot.build_shape(
+                map_chunk.resolution,
+                config.collision_distance,
+                &(*state).into(),
+            );
+            if has_dynamic_collision(&state_shape, obstacles)
+                || has_static_collision(&state_shape, map_chunk)
+            {
+                //collisions are not acceptable
+                return Err(MetricError::Unreacheable);
+            }
+        }
+        Ok((MetricKind::Collision, MetricCost::ZERO))
+    })
+}
+\end{lstlisting}
+
+
+Метрика удалённости от коллизий:
+\begin{lstlisting}
+fn collision_map_metric(
+    &'a self,
+    map: &'a DistanceGrid,
+    maybe_obstacles: Option<&'a DynamicObstacles>,
+) -> TrajectoryMetric<'a> {
+    Box::new(move |trajectory| {
+        let state = trajectory.finish_state();
+        let mut min_dist = f32::MAX;
+        let coords = state.position.coords;
+        let dist_cost = map.index_distance(&coords);
+        if dist_cost.is_reacheable() {
+            let dist = map.resolution.to_metres(dist_cost.as_f32());
+            min_dist = f32::min(min_dist, dist);
+        }
+        if let Some(obstacles) = maybe_obstacles {
+            let obstacle = obstacles.closest(&coords);
+            let dist_to_dynamic_obstacle = (obstacle - coords).norm();
+            min_dist = f32::min(min_dist, dist_to_dynamic_obstacle);
+        }
+        Ok((
+            MetricKind::CollisionDistance,
+            MetricCost::new(1.0 / min_dist),
+        ))
+    })
+}
+\end{lstlisting}
+
+Метрика близости траектории к глобальному маршруту:
+\begin{lstlisting}
+fn distance_map_metric(
+    &'a self,
+    distance_grid: &'a DistanceGrid,
+) -> TrajectoryMetric<'a> {
+    Box::new(move |trajectory| {
+        let states = &trajectory.states;
+        let mut distance_cost = 0.0;
+        for state in states.iter() {
+            let world_point = state.position.coords;
+            let distance = distance_grid.index_distance(&world_point);
+            if distance.is_unreacheable() {
+                return Err(MetricError::Unreacheable);
+            }
+            distance_cost += distance.as_f32();
+        }
+        Ok((MetricsKind::GlobalPath, MetricCost::new(distance_cost)))
+    })
+}
+\end{lstlisting}

@@ -452,7 +452,7 @@ a_{\theta,t+1} &= a_{\theta,t} + w_{a_\theta,t}.
 В качестве локального планировшика используется DWA.
 Целевая функция:
 \begin{equation}
-G(v, \omega) = \sum_{i=1}^k w_i \cdot g_{i}(v, \omega),
+	G(v, \omega) = \sum_{i=1}^k w_i \cdot g_{i, \text{norm}}(v, \omega),
 \end{equation}
 где $g_{i,\text{norm}}(v, \omega)$ -- значение $i$-й подцелевой функции,
 $w_i$ -- весовой коэффициент,
@@ -464,10 +464,11 @@ $w_i$ -- весовой коэффициент,
 в динамическом окне $V_d$.
 Нормализованное значение вычисляется как:
 \begin{equation}
-g_{i}(v, \omega) = \frac{g_i(v, \omega) - \min_{(v', \omega') \in V_d} g_i(v', \omega')}{\max_{(v', \omega') \in V_d} g_i(v', \omega') - \min_{(v', \omega') \in V_d} g_i(v', \omega')},
+	g_{i, \text{norm}}(v, \omega) = \frac{g_i(v, \omega) - \min_{(v', \omega') \in V_d} g_i(v', \omega')}{\max_{(v', \omega') \in V_d} g_i(v', \omega') - \min_{(v', \omega') \in V_d} g_i(v', \omega')},
 \end{equation}
 где $\min_{(v', \omega') \in V_d} g_i(v', \omega')$ и $\max_{(v', \omega') \in V_d} g_i(v', \omega')$ --
 минимальное и максимальное значения $i$-й подцелевой функции среди всех пар $(v', \omega')$ в $V_d$.
+
 Нормализация приводит значения к диапазону $[0, 1]$, что позволяет весам $w_i$ эффективно управлять
 приоритетами метрик и обеспечивает сбалансированную оценку траекторий.
 
