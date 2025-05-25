@@ -27,11 +27,175 @@
 
 
 
-\subsection{Разработка UFK}
+\subsection{Разработка UKF}
+Фильтр описывается структурой:
+\begin{lstlisting}
+pub struct KallmanFilter<const N: usize, const K: usize, const S: usize> {
+    pub state: SMatrix<f32, 1, N>,
+    prior_state: Option<SMatrix<f32, 1, N>>,
+    pub state_sigmas: Option<SMatrix<f32, S, N>>,
+    pub state_noise: SMatrix<f32, N, N>,
+    pub meas_sigmas: SMatrix<f32, S, K>,
+    pub meas_noise: SMatrix<f32, K, K>,
+    pub meas_covariance: Option<DMatrix<f32>>,
+    pub inv_meas_covariance: Option<DMatrix<f32>>,
+    pub covariance: SMatrix<f32, N, N>,
+    prior_covariance: Option<SMatrix<f32, N, N>>,
+    pub gain: Option<OMatrix<f32, Const<N>, Dyn>>,
+    pub weights: SigmaWeights<S>,
+}
+\end{lstlisting}
+
+
+Конструктор:
+\begin{lstlisting}
+pub fn new() -> Self {
+     assert_eq!(sigma_order(N), S);
+
+     let weights =
+        sigma_points::estimate_merwe_weights::<N, S>(
+            sigma_points::SigmaMetadata {
+                alpha: 0.1,
+                beta: 2.0,
+                kappa: (N as f32 - 3.0),
+            },
+     );
+     Self::with_weights(weights)
+}
+
+\end{lstlisting}
+
+Расчёт весов сигма-точек выполняется в момент инициализации фильтра Калмана
+следующим образом:
+\begin{lstlisting}
+pub fn estimate_merwe_weights<const N: usize, const S: usize>(
+    metadata: SigmaMetadata,
+) -> SigmaWeights<S> {
+    assert!(S == sigma_order(N));
+    let SigmaMetadata { alpha, beta, kappa } = metadata;
+    let n = N as f32;
+    let lambda = (alpha * alpha) * (n + kappa) - n;
+    let c = 0.5 / (n + lambda);
+    let mut w_m = vec![c; S];
+    let mut w_c = vec![c; S];
+    w_c[0] = lambda / (n + lambda) + (1.0 - alpha * alpha + beta);
+    w_m[0] = lambda / (n + lambda);
+    SigmaWeights {
+        covariance: SVector::<f32, S>::from_vec(w_c).transpose(),
+        mean: SVector::<f32, S>::from_vec(w_m).transpose(),
+        sigma_order: S,
+        metadata,
+    }
+}
+
+\end{lstlisting}
+
+Оценка значений сигма-точек выполняется по алгоритму:
+\begin{lstlisting}
+pub trait FnDistance<const N: usize>:
+    Fn(SMatrixView<f32, 1, N>, SMatrixView<f32, 1, N>) -> SMatrix<f32, 1, N>
+{/
+}
+
+pub fn estimate_merwe_sigmas<const S: usize, const N: usize, D>(
+    state: SMatrixView<f32, 1, N>,
+    covariance: SMatrixView<f32, N, N>,
+    metadata: SigmaMetadata,
+    distance_of: &D,
+) -> Result<SMatrix<f32, S, N>, MathError>
+where
+    D: FnDistance<N>,
+{
+    let SigmaMetadata { alpha, kappa, .. } = metadata;
+    let mean_estimations = {
+        let state_size = N as f32;
+        let lambda = alpha.powi(2) * (state_size + kappa) - state_size;
+        let matrix = covariance.scale(lambda + state_size);
+        let matrix = matrix.symmetric_part() + SMatrix::identity() * 0.0001;
+        let Some(cholesky) = Cholesky::new(matrix) else {
+            let dmatrix = DMatrix::from_iterator(
+                matrix.nrows(),
+                matrix.ncols(),
+                matrix.iter().copied(),
+            );
+            return Err(MathError::CholeskyFailed(dmatrix));
+        };
+        cholesky.l()
+    };
+    let mut sigmas = SMatrix::<f32, S, N>::zeros();
+    sigmas.row_mut(0).copy_from(&state);
+    for i in 0..state.len() {
+        let mean_estimation = mean_estimations.column(i).transpose();
+        sigmas
+            .row_mut(i + 1)
+            .copy_from(&distance_of(state, (-1.0 * mean_estimation).as_view()));
+        sigmas
+            .row_mut(N + i + 1)
+            .copy_from(&distance_of(state, (1.0 * mean_estimation).as_view()));
+    }
+    Ok(sigmas)
+}
+
+\end{lstlisting}
+Для извелечения квадратного корня из матрицы ковариации $\mathbf{P}$
+используется декомпозиция Холеского. Операция декомпозиции 
+определена только над положительно-определёнными матрицами. По определению,
+матрица ковариации всегда положительно определена (элементами матрицы являются ковариации
+между переменными). Но в процессе работы фильтра возможна ситуация,
+что матрица $\mathbf{P}$ оказывается отрицательно-определённой.
+Подобная ситуация возникает из-за:
+\begin{itemize}
+    \item накопления аппаратной вычислительной ошибки;
+    \item особенностей способа обновления значений ковариаций в матриц;
+    \item высокой сложности модели системы (более трёх переменных в векторе $\mathbf{X}$).
+\end{itemize}
+
+В случае, если невозможно произвести декомпозицию Холецкому,
+предлагается сброс фильтра (см. подраздел \ref{subsec:motion_estimation}).
+
+Ключевым этапом в работе UKF является реализация алгоритма преобразования  
+
+\begin{lstlisting}
+pub fn transform<T, F, const N: usize, const S: usize>(
+    sigmas: &SMatrix<f32, S, N>,
+    weights: &SigmaWeights<S>,
+    noise_opt: Option<SMatrixView<f32, N, N>>,
+    residual: &T,
+    mean: &F,
+) -> (SMatrix<f32, 1, N>, SMatrix<f32, N, N>)
+where
+    T: FnDistance<N>,
+    F: FnMean<N, S>,
+{
+    let state = mean(weights.mean.as_view(), sigmas.as_view());
+
+    let mut covariance = SMatrix::<f32, N, N>::zeros();
+
+    for i in 0..S {
+        let row = sigmas.row(i).clone_owned();
+
+        let y = residual(row.as_view(), state.as_view());
+
+        let mut outer = y.transpose() * y;
+        outer.scale_mut(weights.covariance[i]);
+        covariance += outer;
+    }
+
+    if let Some(noise) = noise_opt {
+        //assert noise is diagonal matrix
+        covariance += noise;
+    }
+
+    (state, covariance)
+}
+\end{lstlisting}
+
+
 
 
 
 \subsection{Разработка модуля оценки состояния}
+\label{subsec:motion_estimation}
 
 \begin{lstlisting}
 pub type FilterState = ukf::FilterState<
@@ -56,8 +220,7 @@ pub struct MotionEstimation {
 }
 \end{lstlisting}
 
-
-\begin{lslisting}
+\begin{lstlisting}
 fn apply_event(
     &mut self,
     event: SensorEvent,
@@ -138,10 +301,12 @@ fn apply_event(
 
     Ok(())
 }
-\end{lslisting}
+
+\end{lstlisting}
 
 
-\begin{lslisting}
+Функции для преобразования сигма-точек
+\begin{lstlisting}
 fn meas_residual(
     m1: SMatrixView<f32, 1, MEASUREMENT_SIZE>,
     m2: SMatrixView<f32, 1, MEASUREMENT_SIZE>,
@@ -151,7 +316,6 @@ fn meas_residual(
     m[IMU_THETA] = normalize_angle(m[IMU_THETA]);
     m
 }
-
 
 fn meas_mean(
     weights: SMatrixView<f32, 1, ACCELERATION_MODEL_SIGMA_ORDER>,
@@ -190,10 +354,12 @@ fn meas_mean(
         compass_theta,
     ])
 }
-\end{lslisting}
+\end{lstlisting}
+
 
 \subsection{Глобальный планировщик}
 
 
 
 \subsection{Локальный планировщик}
+
