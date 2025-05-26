@@ -12,10 +12,10 @@
 % \documentclass[a4paper,14pt,russian,oneside,final,draft]{extreport}
 \documentclass[a4paper,14pt,russian,oneside,final]{extreport}
 \usepackage{cite}
-
 \usepackage{float}
 %\restylefloat{table}
 
+% Rust programming language
 
 % Зачем: Учет особенностей различных языков.
 \usepackage[english,russian]{babel}
@@ -25,6 +25,8 @@
 % Set TimeNewRoman as main font
 \usepackage{fontspec}
 \setmainfont{Times New Roman}
+\setmonofont{Consolas}
+
 
 %\input{fonts_linux}% не забудьте закомментировать \input{fonts_windows}
 
@@ -370,6 +372,19 @@
 % Зачем: Оформление листингов кода
 % Примечание: final нужен для переопределения режима draft, в котором листинги не выводятся в документ.
 \usepackage[final]{listings}
+\usepackage{listings-rust}
+
+\newfontfamily\consolas{Consolas}
+\lstset{
+	% basicstyle=\small\consolas,
+	basicstyle=\fontsize{12}{12}\consolas,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakindent=20pt, % or any value you prefer
+  language=Rust,
+  % ... other options ...
+}
+
 \usepackage{amsmath}
 
 \usepackage{algorithm}
