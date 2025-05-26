@@ -4,9 +4,8 @@
 
 
 % https://tex.stackexchange.com/questions/498098/how-to-fix-xelatex-warnings-about-undefined-font-shapes
-% TODO, fix the font later on
-
 % !TeX spellcheck = russian-aot-ieyo
+
 % Зачем: Определяет класс документа (То, как будет выглядеть документ)
 % Примечание: параметр draft помечает строки, вышедшие за границы страницы, прямоугольником, в финальной версии его нужно удалить.
 % \documentclass[a4paper,14pt,russian,oneside,final,draft]{extreport}
@@ -112,6 +111,7 @@
 \usepackage{tocloft}
 \setlength{\cftbeforetoctitleskip}{-1em}
 \setlength{\cftaftertoctitleskip}{1em}
+\renewcommand{\cfttoctitlefont}{\normalsize\bfseries}
 
 % Зачем: Определяет отступы слева для записей в таблице содержания.
 % Почему: Пункт 2.2.7 Требований по оформлению пояснительной записки.
@@ -389,24 +389,28 @@
 \makeatother
 
 \usepackage{titlesec}
-\titleformat{\section}
+\titleformat{\section}[block]
   {\normalfont\bfseries} % format of the whole title
   {\thesection}                % label (section number)
   {0.5em}                       % horizontal space between number and title
   {}
 
-\titleformat{\subsection}
+\titleformat{\subsection}[block]
   {\normalfont\bfseries}
   {\thesubsection}
   {0.5em}
   {}
 
 
-\titleformat{\subsubsection}
+\titleformat{\subsubsection}[block]
   {\normalfont\bfseries}
   {\thesubsubsection}
   {0.5em}
   {}
+
+\titlespacing*{\section}{\parindent}{1em}{0.5em}
+\titlespacing*{\subsection}{\parindent}{1em}{0.5em}
+\titlespacing*{\subsubsection}{\parindent}{1em}{0.5em}
 
 \usepackage{amsmath}
 
