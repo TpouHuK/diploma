@@ -113,7 +113,6 @@
 \setlength{\cftbeforetoctitleskip}{-1em}
 \setlength{\cftaftertoctitleskip}{1em}
 
-
 % Зачем: Определяет отступы слева для записей в таблице содержания.
 % Почему: Пункт 2.2.7 Требований по оформлению пояснительной записки.
 \makeatletter
@@ -146,7 +145,7 @@
     {\fivecharsapprox}%
     {-1em \@plus -1ex \@minus -.2ex}%
     {1em \@plus .2ex}%
-    {\raggedright\hyphenpenalty=10000\normalfont\large\bfseries\MakeUppercase}}
+    {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries\MakeUppercase}}
 \makeatother
 
 
@@ -181,7 +180,7 @@
     {\z@}%
     {-1em \@plus -1ex \@minus -.2ex}%
     {1em \@plus .2ex}%
-    {\centering\hyphenpenalty=10000\normalfont\large\bfseries\MakeUppercase}%
+    {\centering\hyphenpenalty=10000\normalfont\normalsize\bfseries\MakeUppercase}%
     }
 \makeatother
 
@@ -384,6 +383,23 @@
   language=Rust,
   % ... other options ...
 }
+
+\makeatletter
+\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname\hspace{0.5em}} % Set space to 1em
+\makeatother
+
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\bfseries} % format of the whole title
+  {\thesection}                % label (section number)
+  {0.5em}                       % horizontal space between number and title
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\bfseries}
+  {\thesubsection}
+  {0.5em}
+  {}
 
 \usepackage{amsmath}
 
