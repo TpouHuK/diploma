@@ -61,7 +61,7 @@
 
 % Зачем: Настраивает отступы от границ страницы.
 % Почему: Пункт 2.1.2 Требований по оформлению пояснительной записки.
-\usepackage[left=3cm,top=2.0cm,right=1.5cm,bottom=2.7cm]{geometry}
+\usepackage[left=3cm,top=2.0cm,right=1.5cm,bottom=2.7cm,footskip=1.3cm]{geometry}
 \usepackage{microtype}
 
 
@@ -80,6 +80,7 @@
 % отдельная для каждой страницы
 \usepackage{perpage}
 \MakePerPage{footnote}
+
 
 
 
@@ -123,6 +124,7 @@
 
 % Зачем: Работа с колонтитулами
 \usepackage{fancyhdr} % пакет для установки колонтитулов
+
 \pagestyle{fancy} % смена стиля оформления страниц
 
 
@@ -208,6 +210,7 @@
 % Зачем: Добавление подписей к рисункам
 \usepackage[nooneline]{caption}
 \usepackage{subcaption}
+\usepackage[skip=0pt]{caption}
 
 
 
@@ -230,7 +233,7 @@
 \DeclareCaptionLabelSeparator{stb}{~--~}
 \captionsetup{labelsep=stb}
 \captionsetup[figure]{labelformat=stbfigure,justification=centering}
-\captionsetup[table]{labelformat=stbtable,justification=raggedright}
+\captionsetup[table]{labelformat=stbtable,justification=raggedright,skip=0pt}
 \renewcommand{\thesubfigure}{\asbuk{subfigure}}
 
 % Зачем: Окружения для оформления формул
@@ -239,19 +242,35 @@
 \usepackage{calc}
 \newlength{\lengthWordWhere}
 \settowidth{\lengthWordWhere}{где}
+
 \newenvironment{explanationx}
     {%
-    %%% Следующие строки определяют специфические требования разных редакций стандартов. Раскоменнтируйте нужную строку
-    %% стандартный абзац, СТП-01 2010
-    %\begin{itemize}[leftmargin=0cm, itemindent=\parindent + \lengthWordWhere + \labelsep, labelsep=\labelsep]
-    %% без отступа, СТП-01 2013
-    \begin{itemize}[leftmargin=0cm, itemindent=\lengthWordWhere + \labelsep , labelsep=\labelsep]%
-    \renewcommand\labelitemi{}%
+    %%% Define the itemize environment with specific parameters
+    \begin{itemize}[%
+		leftmargin=0cm,
+        %leftmargin=0cm, % No left margin for the entire list
+        itemindent=\parindent, % Indent the item label by \parindent
+        labelsep=\labelsep, % Space between label and item content
+        labelwidth=0cm] % Width of the label (assumed to be defined elsewhere)
+    \renewcommand\labelitemi{}% Remove the bullet for items
     }
     {%
-    %\\[\parsep]
     \end{itemize}
     }
+
+% \newenvironment{explanationx}
+%     {%
+%     %%% Следующие строки определяют специфические требования разных редакций стандартов. Раскоменнтируйте нужную строку
+%     %% стандартный абзац, СТП-01 2010
+%     %\begin{itemize}[leftmargin=0cm, itemindent=\parindent + \lengthWordWhere + \labelsep, labelsep=\labelsep]
+%     %% без отступа, СТП-01 2013
+%     %\begin{itemize}[leftmargin=0cm, itemindent=\lengthWordWhere + \labelsep , labelsep=\labelsep]%
+%     \renewcommand\labelitemi{}%
+%     }
+%     {%
+%     %\\[\parsep]
+%     \end{itemize}
+%     }
 
 % Старое окружение для "где". Сохранено для совместимости
 \usepackage{tabularx}
@@ -315,9 +334,6 @@
 % Зачем: Устанавливает отступ от границы документа до символа списка, чтобы этот отступ равнялся отступу параграфа
 % Почему: Пункт 2.3.5 Требований по оформлению пояснительной записки.
 
-
-
-% Adjusted setlist commands
 \setlist[itemize,0]{itemindent=\parindent + 2.2ex, leftmargin=0ex, label=--, labelwidth=2em, rightmargin=0pt, listparindent=\parindent}
 \setlist[enumerate,1]{itemindent=\parindent + 2.7ex, leftmargin=0ex, rightmargin=0pt, listparindent=\parindent}
 \setlist[enumerate,2]{itemindent=\parindent + \parindent - 2.7ex, rightmargin=0pt, listparindent=\parindent}
@@ -389,28 +405,29 @@
 \makeatother
 
 \usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
 \titleformat{\section}[block]
-  {\normalfont\bfseries} % format of the whole title
-  {\thesection}                % label (section number)
+  {\raggedright\normalfont\bfseries} % format of the whole title
+  {\raggedright\thesection}                % label (section number)
   {0.5em}                       % horizontal space between number and title
   {}
 
 \titleformat{\subsection}[block]
-  {\normalfont\bfseries}
-  {\thesubsection}
+  {\raggedright\normalfont\bfseries}
+  {\raggedright\thesubsection}
   {0.5em}
   {}
 
 
 \titleformat{\subsubsection}[block]
-  {\normalfont}
-  {\bfseries\thesubsubsection}
+  {\raggedright\normalfont}
+  {\raggedright\bfseries\thesubsubsection}
   {0.5em}
   {}
 
 \titlespacing*{\section}{\parindent}{1em}{0.5em}
 \titlespacing*{\subsection}{\parindent}{1em}{0.5em}
-\titlespacing*{\subsubsection}{\parindent}{1em}{0.5em}
+\titlespacing*{\subsubsection}{\parindent}{1em}{0.0em}
 
 \usepackage{amsmath}
 
