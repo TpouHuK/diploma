@@ -1,8 +1,3 @@
-% cargo make run_mock_robot
-% cargo make brains
-% cargo make gui
-
-
 % https://tex.stackexchange.com/questions/498098/how-to-fix-xelatex-warnings-about-undefined-font-shapes
 % !TeX spellcheck = russian-aot-ieyo
 
@@ -14,7 +9,8 @@
 \usepackage{float}
 %\restylefloat{table}
 
-% Rust programming language
+% Зачем: чтобы выключать перенос слов (например в таблицах)
+\usepackage{hyphenat}
 
 % Зачем: Учет особенностей различных языков.
 \usepackage[english,russian]{babel}
@@ -165,13 +161,35 @@
 
 % Зачем: Задает стиль заголовков пунктов
 % Почему: Пункты 2.1.1, 2.2.5 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
+% \makeatletter
+% \renewcommand\subsubsection{
+%   \@startsection{subsubsection}{3}%
+%     {\fivecharsapprox}%
+%     {-1em \@plus -1ex \@minus -.2ex}%
+%     {0.0001ex}%
+%     {\raggedright\hyphenpenalty=10000\normalfont\normalsize}}
+% \makeatother
+
+% \makeatletter
+% \renewcommand\subsubsection{
+%   \@startsection{subsubsection}{3}%
+%     {\fivecharsapprox}%
+%     {-1em \@plus -1ex \@minus -.2ex}%
+%     {\z@}%
+%     {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries}}
+% \makeatother
+
+% Redefine subsubsection
 \makeatletter
-\renewcommand\subsubsection{
-  \@startsection{subsubsection}{3}%
-    {\fivecharsapprox}%
-    {-1em \@plus -1ex \@minus -.2ex}%
-    {\z@}%
-    {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries}}
+\renewcommand\subsubsection{%
+  \@startsection
+    {subsubsection} % name
+    {3} % level
+    {\parindent} % indent
+    {\baselineskip} % beforeskip
+    {0.0001em} % afterskip
+    {\normalfont} % title in normal font
+}
 \makeatother
 
 % Зачем: для оформления введения и заключения, они должны быть выровнены по центру.
@@ -281,6 +299,7 @@
     %% стандартный абзац, СТП-01 2010
     %\par 
     %\tabularx{\textwidth-\fivecharsapprox}{@{}ll@{ --- } X }
+
     %% без отступа, СТП-01 2013
     \noindent 
     \tabularx{\textwidth}{@{}ll@{ --- } X }
@@ -294,18 +313,14 @@
 % Зачем: Удобная вёрстка многострочных формул, масштабирующийся текст в формулах, формулы в рамках и др
 \usepackage{amsmath}
 
-
 % Зачем: Поддержка ажурного и готического шрифтов 
 \usepackage{amsfonts}
-
 
 % Зачем: amsfonts + несколько сотен дополнительных математических символов
 \usepackage{amssymb}
 
-
 % Зачем: Окружения «теорема», «лемма»
 \usepackage{amsthm}
-
 
 % Зачем: Производить арифметические операции во время компиляции TeX файла
 \usepackage{calc}
@@ -379,8 +394,6 @@
 
 % Зачем: Возможность коментировать большие участки документа
 \usepackage{verbatim}
-
-
 \usepackage{xcolor}
 
 
@@ -401,33 +414,33 @@
 }
 
 \makeatletter
-\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname\hspace{0.5em}} % Set space to 1em
+\renewcommand{\@seccntformat}[1]{\textbf{\csname the#1\endcsname\hspace{0.5em}}} % Set space to 1em
 \makeatother
 
-\usepackage{titlesec}
-\newcommand{\sectionbreak}{\clearpage}
-\titleformat{\section}[block]
-  {\raggedright\normalfont\bfseries} % format of the whole title
-  {\raggedright\thesection}                % label (section number)
-  {0.5em}                       % horizontal space between number and title
-  {}
-
-\titleformat{\subsection}[block]
-  {\raggedright\normalfont\bfseries}
-  {\raggedright\thesubsection}
-  {0.5em}
-  {}
-
-
-\titleformat{\subsubsection}[block]
-  {\raggedright\normalfont}
-  {\raggedright\bfseries\thesubsubsection}
-  {0.5em}
-  {}
-
-\titlespacing*{\section}{\parindent}{1em}{0.5em}
-\titlespacing*{\subsection}{\parindent}{1em}{0.5em}
-\titlespacing*{\subsubsection}{\parindent}{1em}{0.0em}
+% \usepackage{titlesec}
+% \newcommand{\sectionbreak}{\clearpage}
+% \titleformat{\section}[hang]
+%   {\normalfont\bfseries\raggedright} % format of the whole title
+%   {\hspace{\parindent}\thesection}                % label (section number)
+%   {0.5em}                       % horizontal space between number and title
+%   {}
+%
+% \titleformat{\subsection}[block]
+%   {\normalfont\bfseries}
+%   {\thesubsection}
+%   {0.5em}
+%   {}
+%
+%
+% \titleformat{\subsubsection}[block]
+%   {\normalfont}
+%   {\bfseries\thesubsubsection}
+%   {0.5em}
+%   {}
+%
+% \titlespacing{\section}{\parindent}{1em}{\baselineskip}
+% \titlespacing{\subsection}{\parindent}{1em}{\baselineskip}
+% \titlespacing{\subsubsection}{\parindent}{1em}{\baselineskip}
 
 \usepackage{amsmath}
 
@@ -442,39 +455,6 @@
 \definecolor{redstrings}{rgb}{0.5,0,0}
 
 \renewcommand{\lstlistingname}{Листинг}
-
-\lstdefinelanguage{FSharp}
-    {morekeywords={abstract,and,as,assert,base,begin,class,default,delegate,do,done,downcast,downto,elif,else,end,exception,extern,false,finally,for,fun,function,global,if,in,inherit,inline,interface,internal,lazy,let,let!,match,member,module,mutable,namespace,new,not,null,of,open,or,override,private,public,rec,return,return!,select,static,struct,then,to,true,try,type,upcast,use,use!,val,void,when,while,with,yield,yield!,asr,land,lor,lsl,lsr,lxor,mod,sig,atomic,break,checked,component,const,constraint,constructor,continue,eager,event,external,fixed,functor,include,method,mixin,object,parallel,process,protected,pure,sealed,tailcall,trait,virtual,volatile},
-    keywordstyle=\bfseries\color{bluekeywords},
-    sensitive=false,
-    morecomment=[l][\color{greencomments}]{///},
-    morecomment=[l][\color{greencomments}]{//},
-    morecomment=[s][\color{greencomments}]{{(*}{*)}},
-    morestring=[b]",
-    stringstyle=\color{redstrings},
-    }
-
-\lstdefinestyle{fsharpstyle}{
-   xleftmargin=0ex,
-   language=FSharp,
-   basicstyle=\footnotesize\ttfamily,
-   breaklines=true,
-   columns=fullflexible
-}
-
-\lstdefinestyle{csharpinlinestyle} {
-  language=[Sharp]C,
-  morekeywords={yield,var,get,set,from,select,partial,where,async,await},
-  breaklines=true,
-  columns=fullflexible,
-  basicstyle=\footnotesize\ttfamily
-}
-
-\lstdefinestyle{csharpstyle}{
-  language=[Sharp]C,
-  frame=lr,
-  rulecolor=\color{blue!80!black}}
-
 
 % Зачем: Нумерация листингов в пределах секции
 \AtBeginDocument{\numberwithin{lstlisting}{section}}
@@ -537,9 +517,6 @@
 
 % Зачем: преобразовывать текст в верхний регистр командой MakeTextUppercase
 \usepackage{textcase}
-
-% Зачем: чтобы выключать перенос слов (например в таблицах)
-\usepackage{hyphenat}
 
 
 % Зачем: Переносы в словах с тире.
