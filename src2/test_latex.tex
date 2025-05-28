@@ -4,7 +4,7 @@
 % Запрещается применять иностранные термины при наличии
 % равнозначных слов и терминов в русском языке.
 
-\input{src/preamble}
+\input{src2/000preamble}
 
 \begin{document}
 \setcounter{page}{2}
@@ -27,22 +27,22 @@
 \renewcommand \contentsname {
 	\centerline{\bfseries\normalsize{\MakeUppercase{содержание}}}}
 \tableofcontents
-\input{src/definitions}
+\input{src2/00definitions}
 
 \newpage
 
-\input{src/introduction}
-\input{src/01analysis}
-\input{src/02subject}
-\input{src/03proectirovanie}
-\input{src/04development}
-\input{src/05user_guide}
-\input{src/06testing}
+\input{src2/00introduction}
+\input{src2/01analysis}
+\input{src2/02subject}
+\input{src2/03proectirovanie}
+\input{src2/04development}
+\input{src2/05testing}
+\input{src2/06user_guide}
 
 % CUTOFF
-\input{src/07teo}
+\input{src2/07teo}
 
-\input{src/ending}
+\input{src2/99ending}
 
 \renewcommand{\bibsection}{\sectioncentered*{Список использованных источников}\label{sec:literat}}
 \addcontentsline{toc}{section}{\nameref{sec:literat}}
@@ -52,9 +52,9 @@
 \label{sec:priloj}
 \addcontentsline{toc}{section}{\nameref{sec:priloj}}
 
-\lstset{breaklines=true, breakatwhitespace=false,
-  alsoletter={.},
-}
-\lstinputlisting[breaklines=true]{dump2}
+% \lstset{breaklines=true, breakatwhitespace=false,
+%   alsoletter={.},
+% }
+% \lstinputlisting[breaklines=true]{dump2}
 
 \end{document}

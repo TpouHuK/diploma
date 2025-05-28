@@ -624,7 +624,7 @@ FUNCTION {format.date}
     }
     { month empty$
         'year
-        { year ". " "--- " month * * * }
+        { year ". " "-- " month * * * }
       if$
     }
   if$

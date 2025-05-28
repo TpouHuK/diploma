@@ -1,0 +1,877 @@
+==> ./config/mod.rs <==
+mod world_map;
+
+use std::time::Duration;
+
+use roboq_types::{
+    from_variant,
+    model::{
+        localization::{LocalizationParams, MatchingParams, NoiseParams},
+        map::MapParams,
+        plan::{MetricsParams, PlannerParams, StuckParams},
+        robot_params::RobotParams2D,
+        Metres,
+    },
+};
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    icp::icp_slam::{IcpSlamConfig, IcpSlamInitConfig},
+    planner::PlannerSimulationConfig,
+};
+
+pub use roboq_types::model::localization::SensorParams;
+
+#[cfg(feature = "localization")]
+pub use crate::localization::MotionEstimationConfig;
+
+pub use crate::planner::RobotConfig;
+pub use world_map::WorldMapConfig;
+
+#[derive(Debug, Clone)]
+pub enum ConfigProperty {
+    UpdateMap(bool),
+    UseCollisions(bool),
+    UseDebug(bool),
+    /// the maximal period of time
+    /// after which robot will be stopped
+    /// if no more commands were supplied
+    ReactionTimeout(Duration),
+    CollisionDistance(Metres),
+
+    MapParams(MapParams),
+    RobotParams(RobotParams2D),
+    NoiseParams(NoiseParams),
+    LocalizationParams(LocalizationParams),
+    MatchingParams(MatchingParams),
+    SensorParams(SensorParams),
+
+    //planner related params
+    PlannerParams(PlannerParams),
+    StuckParams(StuckParams),
+    MetricsParams(MetricsParams),
+}
+
+from_variant!(ConfigProperty, SensorParams);
+from_variant!(ConfigProperty, MapParams);
+from_variant!(ConfigProperty, NoiseParams);
+from_variant!(ConfigProperty, PlannerParams);
+from_variant!(ConfigProperty, LocalizationParams);
+from_variant!(ConfigProperty, MatchingParams);
+from_variant!(ConfigProperty, StuckParams);
+from_variant!(ConfigProperty, MetricsParams);
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct DebugConfig {
+    pub enabled: bool,
+}
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct NavigationConfig {
+    pub icp_slam_init_config: IcpSlamInitConfig,
+    //base icp_slam_config
+    pub icp_slam_config: IcpSlamConfig,
+    pub planner_config: PlannerSimulationConfig,
+
+    #[cfg(all(feature = "localization", feature = "gps"))]
+    pub world_map_config: WorldMapConfig,
+
+    #[cfg(feature = "localization")]
+    pub estimation_config: MotionEstimationConfig,
+
+    pub debug_config: DebugConfig,
+    #[cfg(feature = "localization")]
+    pub devices_config: SensorParams,
+
+    #[serde(default)]
+    pub matching_config: MatchingParams,
+}
+
+impl NavigationConfig {
+    pub fn apply_property(&mut self, property: ConfigProperty) {
+        let config = self;
+
+        match property {
+            ConfigProperty::UpdateMap(updating_map) => {
+                config.icp_slam_config.updating_map = updating_map;
+            }
+
+            ConfigProperty::UseCollisions(use_collisions) => {
+                config.planner_config.use_collisions = use_collisions;
+            }
+
+            ConfigProperty::UseDebug(enabled) => {
+                config.debug_config.enabled = enabled;
+            }
+
+            ConfigProperty::RobotParams(params) => {
+                config.planner_config.robot.update(params);
+            }
+
+            ConfigProperty::ReactionTimeout(timeout) => {
+                config.planner_config.idle_timeout_ms =
+                    timeout.as_millis() as u64;
+            }
+
+            ConfigProperty::CollisionDistance(distance) => {
+                config.planner_config.collision_distance = distance;
+            }
+
+            ConfigProperty::PlannerParams(params) => {
+                config.planner_config.update(params);
+            }
+
+            ConfigProperty::NoiseParams(params) => {
+                config.estimation_config.update_noise(params);
+            }
+
+            ConfigProperty::MapParams(params) => {
+                #[cfg(feature = "gps")]
+                config.world_map_config.update(params);
+
+                #[cfg(not(feature = "gps"))]
+                drop(params);
+            }
+
+            ConfigProperty::LocalizationParams(params) => {
+                config.estimation_config.update(params);
+            }
+
+            ConfigProperty::MatchingParams(params) => {
+                config.matching_config = params;
+            }
+
+            ConfigProperty::SensorParams(params) => {
+                config.devices_config = params;
+            }
+
+            ConfigProperty::StuckParams(params) => {
+                config.planner_config.stuck = params;
+            }
+
+            ConfigProperty::MetricsParams(params) => {
+                config.planner_config.metrics = params;
+            }
+        }
+    }
+
+    pub fn to_properties(&self) -> Vec<ConfigProperty> {
+        vec![
+            ConfigProperty::UpdateMap(self.icp_slam_config.updating_map),
+            ConfigProperty::UseCollisions(self.planner_config.use_collisions),
+            ConfigProperty::UseDebug(self.debug_config.enabled),
+            ConfigProperty::ReactionTimeout(Duration::from_millis(
+                self.planner_config.idle_timeout_ms,
+            )),
+            ConfigProperty::RobotParams(
+                self.planner_config.robot.clone().into(),
+            ),
+            ConfigProperty::CollisionDistance(
+                self.planner_config.collision_distance,
+            ),
+            ConfigProperty::PlannerParams((&self.planner_config).into()),
+            ConfigProperty::StuckParams(self.planner_config.stuck.clone()),
+            ConfigProperty::MatchingParams(self.matching_config.clone()),
+            #[cfg(feature = "localization")]
+            ConfigProperty::SensorParams(self.devices_config.clone()),
+            ConfigProperty::MetricsParams(self.planner_config.metrics.clone()),
+            #[cfg(feature = "localization")]
+            ConfigProperty::NoiseParams(self.estimation_config.noise_params()),
+            #[cfg(not(feature = "localization"))]
+            ConfigProperty::NoiseParams(Default::default()),
+            #[cfg(feature = "gps")]
+            ConfigProperty::MapParams((&self.world_map_config).into()),
+            #[cfg(feature = "localization")]
+            ConfigProperty::LocalizationParams(self.estimation_config.params()),
+            #[cfg(not(feature = "localization"))]
+            ConfigProperty::LocalizationParams(Default::default()),
+        ]
+    }
+}
+
+==> ./config/world_map.rs <==
+use std::time::Duration;
+
+use roboq_types::model::map::MapParams;
+
+#[derive(Clone, serde::Serialize, serde::Deserialize, o2o::o2o)]
+#[from(MapParams)]
+#[into(MapParams)]
+pub struct WorldMapConfig {
+    /// Should we use predefined zone or not
+    #[serde(default)]
+    pub utm_zone: Option<u8>,
+
+    #[serde(default = "default_utm_threshold")]
+    pub utm_threshold: f64,
+
+    pub map_rotation: f64,
+
+    #[serde(
+        serialize_with = "roboq_types::serde::serialize_millis",
+        deserialize_with = "roboq_types::serde::deserialize_millis",
+        default = "default_coords_lifetime"
+    )]
+    pub coords_lifetime: Duration,
+}
+
+impl WorldMapConfig {
+    pub fn update(&mut self, params: MapParams) {
+        *self = params.into();
+    }
+}
+
+fn default_utm_threshold() -> f64 {
+    10000.0
+}
+
+fn default_coords_lifetime() -> Duration {
+    Duration::from_millis(1_000)
+}
+
+impl Default for WorldMapConfig {
+    fn default() -> Self {
+        Self {
+            coords_lifetime: default_coords_lifetime(),
+            utm_threshold: default_utm_threshold(),
+            map_rotation: 0.0,
+            utm_zone: None,
+        }
+    }
+}
+
+==> ./correlative_scan_matching/correlation_grid.rs <==
+use nalgebra::{Point2, Vector2};
+use roboq_types::model::{map::MetresPerPixel, Metres};
+use serde::{Deserialize, Serialize};
+
+use super::localized_range_scan::LocalizedRangeScan;
+use crate::model::array2d::Array2D;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CorrelationGrid {
+    pub grid: Array2D<u8>,
+    pub resolution: MetresPerPixel,
+    pub size_metres: f32,
+    pub top_left_corner: Vector2<f32>,
+    pub gauss_blur: Array2D<u8>,
+}
+
+impl CorrelationGrid {
+    pub fn new(
+        size_metres: f32,
+        resolution: MetresPerPixel,
+        pos: Vector2<f32>,
+        std_deviation: Metres,
+    ) -> Self {
+        let correlation_grid_size_pixels =
+            resolution.to_pixels(Metres(size_metres)) as u32;
+
+        let kernel_size = 2 * resolution.to_pixels(std_deviation * 2.0) + 1;
+
+        let gauss_blur = new_gaussian_blur_kernel(
+            kernel_size as u32,
+            &resolution,
+            std_deviation,
+        );
+
+        CorrelationGrid {
+            resolution,
+            size_metres,
+            grid: Array2D::new_square(correlation_grid_size_pixels),
+            top_left_corner: pos,
+            gauss_blur,
+        }
+    }
+
+    /// Reset probability lookup grid
+    pub fn clear(&mut self) {
+        self.grid.fill(0);
+    }
+
+    pub fn set_center(&mut self, center: Vector2<f32>) {
+        let grid_size_metres =
+            self.resolution.vector_to_metres(&self.grid.size());
+        self.top_left_corner = center - grid_size_metres / 2.0;
+    }
+
+    pub fn add_scan(&mut self, scan: &LocalizedRangeScan) {
+        for point in &scan.points {
+            self.add_point(point);
+        }
+    }
+
+    ///Add point to grid applying gaussian blur
+    ///to estimate pose probability for this one
+    pub fn add_point(&mut self, point: &Point2<f32>) {
+        let point_on_grid = self
+            .resolution
+            .point_to_pixels(&(point - self.top_left_corner));
+
+        let kernel_size = self.gauss_blur.get_width();
+        let radius = (kernel_size - 1) / 2;
+
+        let top_left_kernel_on_grid =
+            point_on_grid - Vector2::new(radius, radius);
+
+        if top_left_kernel_on_grid.x < 0
+            || top_left_kernel_on_grid.y < 0
+            || top_left_kernel_on_grid.x > (self.grid.get_width() - kernel_size)
+            || top_left_kernel_on_grid.y > (self.grid.get_width() - kernel_size)
+        {
+            return;
+        }
+
+        for x in 0..kernel_size {
+            for y in 0..kernel_size {
+                let kernel_weight =
+                    self.gauss_blur.index_grid(&Point2::new(x, y));
+
+                let grid_weight = self.grid.index_grid_mut(
+                    &(top_left_kernel_on_grid + Vector2::new(x, y)),
+                );
+
+                *grid_weight = (*grid_weight).max(*kernel_weight);
+            }
+        }
+    }
+}
+
+fn new_gaussian_blur_kernel(
+    size: u32,
+    resolution: &MetresPerPixel,
+    std_deviation: Metres,
+) -> Array2D<u8> {
+    let mut kernel = Array2D::new_square(size);
+
+    let kernel_size = size as i32;
+    let sigma = *std_deviation;
+
+    for x in 0..kernel_size {
+        for y in 0..kernel_size {
+            let x_dist = (x - kernel_size / 2) as f32;
+            let y_dist = (y - kernel_size / 2) as f32;
+
+            let distance = resolution
+                .to_metres((x_dist * x_dist + y_dist * y_dist).sqrt());
+
+            let z = ((-0.5f32) * (distance / sigma).powi(2)).exp();
+
+            *kernel.index_grid_mut(&Point2::new(x, y)) = (z * 255.0) as u8;
+        }
+    }
+
+    kernel
+}
+
+==> ./correlative_scan_matching/localized_range_scan.rs <==
+use nalgebra::Point2;
+use serde::{Deserialize, Serialize};
+
+use crate::{icp::icp_svd::PointCloud, model::pose::Pose2D};
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct LocalizedRangeScan {
+    /// All points in LocalizedRangeScan are already in the position of robots pose
+    /// changing robot pose doesn't change the offset of the points, and points are not stored in
+    /// respect to the origin.
+    pub points: Vec<Point2<f32>>,
+    /// Center of the scan pose with rotation.
+    pub pose: Pose2D,
+}
+
+impl LocalizedRangeScan {
+    pub fn cloud_at_position(
+        point_cloud: PointCloud,
+        robot_pose: Pose2D,
+    ) -> Self {
+        let transformation = robot_pose.as_isometry();
+
+        let points: Vec<_> = point_cloud
+            .into_iter()
+            .map(|p| transformation * p)
+            .collect();
+
+        LocalizedRangeScan {
+            pose: robot_pose,
+            points,
+        }
+    }
+}
+
+==> ./correlative_scan_matching/mod.rs <==
+pub mod correlation_grid;
+pub mod localized_range_scan;
+pub mod scan_matcher;
+pub mod scan_ring_buffer;
+
+/*
+pub fn find_corelation(scan: LidarResponse, map: &mut Map) -> (f32, f32, f32) {
+    let mut most_good = (0.0, 0.0, 0.0);
+    let mut most_good_score = 0;
+
+    for angle in 0..360 {
+        let points = point_cloud_from_lidar_response_angle(&scan, (angle as f32).to_radians());
+        for x in -100..100 {
+            for y in -100..100 {
+                let mut current_score = 0;
+                for point in &points {
+                    let translated_point = point + Vector2::new(x as f32, y as f32);
+                    current_score += *map.access_clamped_metres(&translated_point) as u64;
+                }
+                if current_score > most_good_score {
+                    most_good_score = current_score;
+                    most_good = (x as f32, y as f32, angle as f32);
+                }
+            }
+        }
+    }
+
+    most_good
+}
+
+pub fn match_two_scans(source: Vec<Point2<f32>>, target: Vec<Point2<f32>>) {
+    let probability_map: Map = Map::new_empty(Vector2::new(500, 500), 0.03);
+}
+
+/*struct MapperParemeters {
+    use_scan_matching: bool,
+    use_scan_barycetner: bool,
+    minimum_time_interval: f64,
+    minimum_travel_distance: f64,
+    minimum_travel_heading: f64,
+    scan_buffer_size: u32,
+    scan_buffer_maximum_scan_distance: f64,
+    link_match_minumum_response_fine: f64,
+    linux_scan_maximum_distance: f64,
+    do_loop_closing: bool,
+    loop_search_maximum_distance: f64,
+    loop_match_minimum_chain_size: u32,
+
+    loop_match_maximum_variance_coarse: f64,
+
+    loop_match_minimum_response_coarse: f64,
+    loop_match_minimum_respose_fine: f64,
+
+    correlation_search_space_dimension: f64,
+    correlation_search_space_resolution: f64,
+    correlation_search_space_smear_deviation: f64,
+
+    loop_search_space_dimension: f64,
+    loop_search_space_resolution: f64,
+}
+
+struct LocalizedRangeScan {
+
+}
+
+struct Mapper {
+
+}
+
+impl Mapper {
+    fn process_scan(scan: LocalizedRangeScan) {
+
+    }
+}
+
+pub fn correlate_scan() {
+
+}*/*/
+
+==> ./correlative_scan_matching/scan_matcher.rs <==
+use nalgebra::{Rotation2, Vector2};
+use roboq_types::model::{map::MetresPerPixel, Metres};
+use serde::{Deserialize, Serialize};
+
+use crate::model::{array2d::Array2D, pose::Pose2D};
+
+use super::{
+    correlation_grid::CorrelationGrid, localized_range_scan::LocalizedRangeScan,
+};
+
+#[derive(Serialize, Deserialize)]
+pub struct ScanMatcher {
+    correlation_grid: CorrelationGrid,
+
+    search_space_probabilities: Vec<Array2D<f32>>,
+    search_space_resolution: MetresPerPixel,
+    search_space_size: f32,
+    scan_circle_buffer: Vec<LocalizedRangeScan>,
+}
+
+impl ScanMatcher {
+    pub fn new() -> Self {
+        let correlation_grid_resolution = MetresPerPixel(0.01);
+
+        let max_range_scan = 30.0;
+
+        let search_space_size = 0.5;
+
+        // all values <= 3 * sigma = 10cm
+        let std_deviation = Metres(0.03);
+
+        let correlation_grid_size_metres =
+            max_range_scan * 2.0 + search_space_size;
+
+        let correlation_grid_pos = Vector2::new(0.0, 0.0);
+
+        let correlation_grid = CorrelationGrid::new(
+            correlation_grid_size_metres,
+            correlation_grid_resolution,
+            correlation_grid_pos,
+            std_deviation,
+        );
+
+        let search_space_resolution = MetresPerPixel(0.01);
+
+        let mut search_space_grid_size =
+            search_space_resolution.to_pixels(Metres(search_space_size)) as u32;
+
+        // Ensuring that search space is odd number, so we can search -half_size and +half_size
+        // without worrying about 0 (like 5 is -2 to +2, with 0)
+        if (search_space_grid_size % 2) == 0 {
+            search_space_grid_size += 1;
+        }
+        assert!(search_space_grid_size % 2 == 1);
+
+        let revolution_resolution = 360;
+
+        let space_at_resolution = Array2D::new_square(search_space_grid_size);
+
+        let search_space_probabilities =
+            vec![space_at_resolution; revolution_resolution];
+
+        ScanMatcher {
+            correlation_grid,
+            search_space_probabilities,
+            scan_circle_buffer: Vec::new(),
+            search_space_resolution,
+            search_space_size,
+        }
+    }
+
+    pub fn match_scan_against_set_of_scans<'a>(
+        &mut self,
+        scan: &LocalizedRangeScan,
+        set_of_scans: impl Iterator<Item = &'a LocalizedRangeScan>,
+    ) -> Pose2D {
+        let revolution_resolution = 360;
+        let rad_per_degree =
+            std::f32::consts::TAU / revolution_resolution as f32;
+
+        // Initialization of correlation grid
+        {
+            self.correlation_grid.clear();
+            self.correlation_grid.set_center(scan.pose.coords.coords);
+
+            for scan in set_of_scans {
+                self.correlation_grid.add_scan(scan);
+            }
+        }
+
+        let (search_space_size, half_search_space) = {
+            //each search_space has same width
+            let width = self.search_space_probabilities[0].get_width() as usize;
+
+            let half_width = ((width - 1) / 2) as i32;
+
+            (width, half_width)
+        };
+
+        for iangle in 0..revolution_resolution {
+            let angle = iangle as f32 * rad_per_degree;
+
+            let mut current_test_scan = Vec::with_capacity(scan.points.len());
+
+            let rotation = Rotation2::new(angle);
+
+            for point in scan.points.iter() {
+                let rotated_point = rotation
+                    * (point - scan.pose.coords.coords)
+                    + scan.pose.coords.coords
+                    - self.correlation_grid.top_left_corner;
+
+                let point_on_grid = self
+                    .correlation_grid
+                    .resolution
+                    .point_to_pixels(&rotated_point)
+                    - Vector2::new(half_search_space, half_search_space);
+
+                let point_weigth =
+                    self.correlation_grid.grid.index(&(point_on_grid));
+
+                current_test_scan.push(point_weigth);
+            }
+
+            let search_space_probabilities =
+                &mut self.search_space_probabilities[iangle];
+
+            let correlation_grid_size =
+                self.correlation_grid.grid.get_width() as usize;
+
+            for y in 0..search_space_size {
+                let y_offset = y * correlation_grid_size;
+                let y_offset_search_space = y * search_space_size;
+
+                for point in &current_test_scan {
+                    let point_offset = point + y_offset;
+
+                    update_search_space(
+                        &mut search_space_probabilities.data,
+                        &self.correlation_grid.grid.data,
+                        point_offset,
+                        y_offset_search_space,
+                        search_space_size,
+                    );
+                }
+            }
+        }
+
+        let divisor: f32 = 1.0 / scan.points.len() as f32;
+        let mut max_prob: f32 = f32::MIN;
+
+        for array in self.search_space_probabilities.iter_mut() {
+            for prob in &mut array.data {
+                *prob *= divisor;
+
+                if *prob > max_prob {
+                    max_prob = *prob;
+                }
+            }
+        }
+
+        let mut avg_count: usize = 0;
+        let mut avg_x: f32 = 0.0;
+        let mut avg_y: f32 = 0.0;
+        let mut avg_sin: f32 = 0.0;
+        let mut avg_cos: f32 = 0.0;
+        let mut angle_old = 0.0;
+
+        assert_eq!(revolution_resolution, 360);
+
+        for (angle_index, array) in
+            self.search_space_probabilities.iter().enumerate()
+        {
+            let angle: f32 = angle_index as f32;
+
+            for (index, prob) in array.data.iter().enumerate() {
+                if *prob >= max_prob {
+                    angle_old = angle;
+                    let (sin, cos) = angle.to_radians().sin_cos();
+                    let (x, y) = array.from_index_to_xy(index);
+                    avg_sin += sin;
+                    avg_cos += cos;
+                    avg_x += x as f32;
+                    avg_y += y as f32;
+                    avg_count += 1;
+                }
+            }
+        }
+
+        log::trace!("Old angle: {angle_old}");
+        log::trace!("Max response: {max_prob}");
+        log::trace!("AVG X: {avg_x}. AVG Y: {avg_y}");
+        log::trace!("AVG COUNT: {avg_count}");
+
+        avg_x /= avg_count as f32;
+        avg_y /= avg_count as f32;
+
+        let angle = scan.pose.heading_rad + avg_sin.atan2(avg_cos);
+
+        let coords = scan.pose.coords
+            - Vector2::new(
+                self.search_space_size / 2.0,
+                self.search_space_size / 2.0,
+            )
+            + Vector2::new(
+                self.search_space_resolution.to_metres(avg_x),
+                self.search_space_resolution.to_metres(avg_y),
+            );
+
+        Pose2D {
+            heading_rad: angle,
+            coords,
+        }
+    }
+}
+
+/// Update values in given search space `probabilities`
+/// applying weight values from grid lookup slice
+#[inline]
+pub fn update_search_space(
+    probabilities: &mut [f32],
+    grid: &[u8],
+    point_offset: usize,
+    y_offset_search_space: usize,
+    search_space_size: usize,
+) {
+    unsafe {
+        let weight_ptr = grid.get_unchecked(point_offset) as *const u8;
+
+        let prob_ptr =
+            probabilities.get_unchecked_mut(y_offset_search_space) as *mut f32;
+
+        for x in 0..search_space_size {
+            *(prob_ptr.add(x)) += *weight_ptr.add(x) as f32;
+        }
+    }
+}
+
+// #[inline]
+// pub fn update_search_space_safe(
+//     probabilities: &mut [f32],
+//     grid: &[u8],
+//     point_offset: usize,
+//     y_offset_search_space: usize,
+//     search_space_size: usize,
+// ) {
+//     for x in 0..search_space_size {
+//         probabilities[y_offset_search_space + x] +=
+//             grid[point_offset + x] as f32;
+//     }
+// }
+//
+// #[inline]
+// pub fn update_search_space2(
+//     probabilities: &mut [u32],
+//     grid: &[u8],
+//     point_offset: usize,
+//     y_offset_search_space: usize,
+//     search_space_size: usize,
+// ) {
+//     unsafe {
+//         for x in 0..search_space_size {
+//             let data = grid.get_unchecked(point_offset + x);
+//             *(probabilities.get_unchecked_mut(y_offset_search_space + x)) +=
+//                 *data as u32;
+//         }
+//     }
+// }
+
+impl Default for ScanMatcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+==> ./correlative_scan_matching/scan_ring_buffer.rs <==
+use std::{collections::HashMap, time::SystemTime};
+
+use roboq_types::devices::DeviceId;
+use serde::{Deserialize, Serialize};
+
+use super::localized_range_scan::LocalizedRangeScan;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ScanRingBuffer {
+    #[serde(skip)]
+    raw_scans: HashMap<DeviceId, (LocalizedRangeScan, SystemTime)>,
+    #[serde(skip)]
+    matched_scans: Vec<LocalizedRangeScan>,
+
+    len: usize,
+}
+
+impl ScanRingBuffer {
+    pub fn new(len: usize) -> Self {
+        assert!(len >= 1, "Not empty buffer is allowed");
+
+        ScanRingBuffer {
+            raw_scans: HashMap::new(),
+            matched_scans: vec![],
+            len,
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &LocalizedRangeScan> {
+        self.matched_scans.iter()
+    }
+
+    pub fn add_raw_scan(
+        &mut self,
+        device_id: DeviceId,
+        scan: LocalizedRangeScan,
+    ) {
+        self.raw_scans.insert(device_id, (scan, SystemTime::now()));
+    }
+
+    pub fn add_matched_scan(&mut self, scan: LocalizedRangeScan) {
+        let scans = &mut self.matched_scans;
+
+        scans.push(scan);
+
+        if scans.len() > self.len {
+            *scans = scans[(scans.len() - self.len)..scans.len()].to_vec();
+        }
+    }
+
+    pub fn latest(
+        &self,
+    ) -> impl Iterator<Item = (DeviceId, &LocalizedRangeScan, SystemTime)> {
+        self.raw_scans
+            .iter()
+            .map(|(&id, (scan, time))| (id, scan, *time))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.matched_scans.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl std::ops::Deref for ScanRingBuffer {
+    type Target = [LocalizedRangeScan];
+
+    fn deref(&self) -> &Self::Target {
+        &self.matched_scans
+    }
+}
+
+==> ./debug/mod.rs <==
+pub use roboq_types::model::debug::{DebugData, DebugDataKind};
+pub use tokio::sync::mpsc::error::TryRecvError;
+pub use tokio::sync::mpsc::{channel, Receiver, Sender};
+
+pub use roboq_types::model::debug::AlgoKind;
+
+pub type DebugSender = Sender<DebugData>;
+
+==> ./devices/compass.rs <==
+use std::time::SystemTime;
+
+use roboq_types::model::localization::{SensorData, SensorEvent};
+
+use crate::shared_data::SharedData;
+
+pub fn handle(shared_data: &SharedData, angle: f32) -> Option<SensorEvent> {
+    let map_rotation = shared_data
+        .config()
+        .blocking_read()
+        .world_map_config
+        .map_rotation;
+
+    log::trace!("Compass angle: {angle}");
+    let angle_rad = angle as f64;
+
+    let mut rotation_rad = (angle_rad - map_rotation).abs() as f32;
+
+    if rotation_rad < 0.0 {
+        rotation_rad += 2.0 * std::f32::consts::PI;
+    }
+
+    if rotation_rad >= 2.0 * std::f32::consts::PI {
+        rotation_rad -= 2.0 * std::f32::consts::PI;
+    }
+
+    if rotation_rad > std::f32::consts::PI {
+        rotation_rad -= 2.0 * std::f32::consts::PI;
+    }
+
+    let data = SensorData::new(rotation_rad, SystemTime::now());
+
+    Some(SensorEvent::CompassRotation(data))
+}

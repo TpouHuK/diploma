@@ -1,7 +1,7 @@
 \section{Руководство пользователя}
 
-\subsection{ Инструкция по установке RUST }
-\subsubsection{ Установка на Windows }
+\subsection{Инструкция по установке RUST}
+\subsubsection{Установка на Windows}
 	Перейдите на страницу \url{https://www.rust-lang.org/tools/install} и следуйте инструкциям по установке.
     Установщик предложит выбрать одну из опций. Выберите опцию 1, чтобы установить Rust со стандартными настройками.
 
@@ -25,33 +25,34 @@ rustc --version
 
 Вы должны увидеть версию Rust, хэш коммита, дату коммита и дату сборки.
 
-\subsection{Переменные окружения}
+\subsection{Управляющие команды}
 
 Конфигурация определяет несколько переменных окружения для управления поведением задач и настройками проекта. Эти переменные используются в различных задачах для настройки путей, режимов и параметров развертывания.
 
+\todo{Почистить всё это}
 \begin{itemize}
-    \item \textbf{compress}: Создает архивы драйверов для выбранного ROBO\_MODE. Требует установки ROBO\_MODE и наличия скрипта compress.sh в директории scripts. Выполняет скрипт compress.sh.
-    \item \textbf{cross}: Собирает бинарный файл проекта для указанной целевой архитектуры. Зависит от задачи setup\_features. Использует команду cross с режимом release, именем бинарного файла проекта, без стандартных функций и с дополнительными флагами функций на основе FEATURE\_NAME.
-    \item \textbf{compress\_driver}: Сжимает файлы, связанные с драйверами, для выбранного ROBO\_MODE. Требует установки ROBO\_MODE и наличия скрипта compress\_driver.sh. Выполняет скрипт compress\_driver.sh.
-    \item \textbf{copy\_binary}: Копирует скомпилированный бинарный файл в указанный путь. Требует установки COPY\_TO\_PATH. Копирует бинарный файл из директории release целевой архитектуры в указанный путь.
-    \item \textbf{copy\_config}: Копирует конфигурационные файлы в указанный путь. Требует установки CONFIG\_FILES и COPY\_TO\_PATH. Перебирает CONFIG\_FILES и копирует каждый в место назначения.
-    \item \textbf{copy\_scripts}: Копирует скриптовые файлы в указанный путь. Требует установки SCRIPT\_FILES и COPY\_TO\_PATH. Копирует каждый скриптовый файл и выводит BUILD\_FLAGS для отладки.
-    \item \textbf{rename\_zip}: Переименовывает zip-файлы, добавляя суффикс. Требует установки SUFFIX. Переименовывает все .zip файлы в текущей директории, добавляя значение SUFFIX.
-    \item \textbf{setup\_features}: Настраивает флаги функций для задач, которые их требуют. Требует установки FEATURE\_NAME. Устанавливает переменную окружения FEATURE\_FLAG в --features.
-    \item \textbf{sync\_config}: Получает конфигурационные файлы с удаленного робота. Требует установки CONFIG\_FILES. Использует scp для копирования IcpConfig.toml из директории ROBO\_HOME робота в локальную директорию config/ROBO\_MODE через указанный DEPLOY\_PORT.
-    \item \textbf{copy\_config\_deploy}: Развертывает конфигурационные файлы на удаленный робот. Требует установки CONFIG\_FILES. Использует scp для копирования CONFIG\_FILES в директорию ROBO\_HOME робота.
-    \item \textbf{run\_oneshot\_script}: Запускает одноразовый скрипт на удаленном роботе после развертывания. Требует установки ONESHOT\_SCRIPT. Копирует скрипт на робот, выполняет его через ssh и удаляет после выполнения.
-    \item \textbf{copy\_binary\_deploy}: Развертывает скомпилированный бинарный файл на удаленный робот. Зависит от copy\_config\_deploy и run\_oneshot\_script. Останавливает соответствующую systemd-службу, копирует бинарный файл в ROBO\_HOME и использует указанный DEPLOY\_PORT и SSH-ключ.
-    \item \textbf{scripts\_deploy}: Развертывает файл службы systemd для робота. Требует наличия файла службы в директории robot\_deployment/ROBO\_MODE. Копирует файл службы в /etc/systemd/system на роботе, перезагружает демон systemd, включает и перезапускает службу.
-    \item \textbf{deploy}: Оркестрирует процесс развертывания. Выполняет задачи cross, copy\_binary\_deploy и scripts\_deploy последовательно для сборки и развертывания бинарного файла на удаленный робот.
-    \item \textbf{test\_single\_default}: Запускает одиночный тестовый сценарий параллельно. Зависит от setup\_features и запускает задачу solo\_no\_move в параллельном режиме с форком.
-    \item \textbf{solo\_no\_move}: Запускает тестовую симуляцию для сценария solo\_no\_move. Устанавливает переменные окружения SCENARIO\_PATH и WORK\_DIR и выполняет cargo run --bin test\_sim в директории test\_sim.
-    \item \textbf{gui}: Запускает тестовый GUI в режиме release. Выполняет cargo run --release --bin test\_gui в директории tools/test\_gui.
-    \item \textbf{gui\_debug}: Запускает тестовый GUI в режиме отладки. Выполняет cargo run --bin test\_gui в директории tools/test\_gui.
-    \item \textbf{run\_webots\_app}: Запускает приложение Webots. Выполняет команду webots из директории WEBOTS\_HOME.
-    \item \textbf{run\_mock\_driver}: Запускает имитацию аппаратного контроллера Webots в режиме release. Выполняет cargo run --bin hardware\_mock\_webots\_controller --release в директории hardware\_mock\_webots\_controller.
-    \item \textbf{run\_mock\_robot}: Запускает приложение Webots и имитацию драйвера последовательно. Запускает webots, ждет 5 секунд, затем запускает имитацию драйвера.
-    \item \textbf{stop\_mock\_robot}: Останавливает приложение Webots и имитацию драйвера. Завершает все запущенные процессы webots и hardware\_mock\_webots\_controller.
-    \item \textbf{control}: Запускает бинарный файл roboq\_service в режиме release с функцией eureka. Выполняет cargo run --release --bin roboq\_service --no-default-features --features eureka.
-    \item \textbf{brains}: Запускает бинарный файл roboporter в режиме release с функцией simulation. Устанавливает переменные окружения ICP\_CONFIG и DEVICE\_CONFIG и выполняет cargo run --bin roboporter --release --no-default-features --features simulation в директории roboporter.
+    \item {compress}: Создает архивы драйверов для выбранного ROBO\_MODE. Требует установки ROBO\_MODE и наличия скрипта compress.sh в директории scripts. Выполняет скрипт compress.sh.
+    \item {cross}: Собирает бинарный файл проекта для указанной целевой архитектуры. Зависит от задачи setup\_features. Использует команду cross с режимом release, именем бинарного файла проекта, без стандартных функций и с дополнительными флагами функций на основе FEATURE\_NAME.
+    \item {compress\_driver}: Сжимает файлы, связанные с драйверами, для выбранного ROBO\_MODE. Требует установки ROBO\_MODE и наличия скрипта compress\_driver.sh. Выполняет скрипт compress\_driver.sh.
+    \item {copy\_binary}: Копирует скомпилированный бинарный файл в указанный путь. Требует установки COPY\_TO\_PATH. Копирует бинарный файл из директории release целевой архитектуры в указанный путь.
+    \item {copy\_config}: Копирует конфигурационные файлы в указанный путь. Требует установки CONFIG\_FILES и COPY\_TO\_PATH. Перебирает CONFIG\_FILES и копирует каждый в место назначения.
+    \item {copy\_scripts}: Копирует скриптовые файлы в указанный путь. Требует установки SCRIPT\_FILES и COPY\_TO\_PATH. Копирует каждый скриптовый файл и выводит BUILD\_FLAGS для отладки.
+    \item {rename\_zip}: Переименовывает zip-файлы, добавляя суффикс. Требует установки SUFFIX. Переименовывает все .zip файлы в текущей директории, добавляя значение SUFFIX.
+    \item {setup\_features}: Настраивает флаги функций для задач, которые их требуют. Требует установки FEATURE\_NAME. Устанавливает переменную окружения FEATURE\_FLAG в --features.
+    \item {sync\_config}: Получает конфигурационные файлы с удаленного робота. Требует установки CONFIG\_FILES. Использует scp для копирования IcpConfig.toml из директории ROBO\_HOME робота в локальную директорию config/ROBO\_MODE через указанный DEPLOY\_PORT.
+    \item {copy\_config\_deploy}: Развертывает конфигурационные файлы на удаленный робот. Требует установки CONFIG\_FILES. Использует scp для копирования CONFIG\_FILES в директорию ROBO\_HOME робота.
+    \item {run\_oneshot\_script}: Запускает одноразовый скрипт на удаленном роботе после развертывания. Требует установки ONESHOT\_SCRIPT. Копирует скрипт на робот, выполняет его через ssh и удаляет после выполнения.
+    \item {copy\_binary\_deploy}: Развертывает скомпилированный бинарный файл на удаленный робот. Зависит от copy\_config\_deploy и run\_oneshot\_script. Останавливает соответствующую systemd-службу, копирует бинарный файл в ROBO\_HOME и использует указанный DEPLOY\_PORT и SSH-ключ.
+    \item {scripts\_deploy}: Развертывает файл службы systemd для робота. Требует наличия файла службы в директории robot\_deployment/ROBO\_MODE. Копирует файл службы в /etc/systemd/system на роботе, перезагружает демон systemd, включает и перезапускает службу.
+    \item {deploy}: Оркестрирует процесс развертывания. Выполняет задачи cross, copy\_binary\_deploy и scripts\_deploy последовательно для сборки и развертывания бинарного файла на удаленный робот.
+    \item {test\_single\_default}: Запускает одиночный тестовый сценарий параллельно. Зависит от setup\_features и запускает задачу solo\_no\_move в параллельном режиме с форком.
+    \item {solo\_no\_move}: Запускает тестовую симуляцию для сценария solo\_no\_move. Устанавливает переменные окружения SCENARIO\_PATH и WORK\_DIR и выполняет cargo run --bin test\_sim в директории test\_sim.
+    \item {gui}: Запускает тестовый GUI в режиме release. Выполняет cargo run --release --bin test\_gui в директории tools/test\_gui.
+    \item {gui\_debug}: Запускает тестовый GUI в режиме отладки. Выполняет cargo run --bin test\_gui в директории tools/test\_gui.
+    \item {run\_webots\_app}: Запускает приложение Webots. Выполняет команду webots из директории WEBOTS\_HOME.
+    \item {run\_mock\_driver}: Запускает имитацию аппаратного контроллера Webots в режиме release. Выполняет cargo run --bin hardware\_mock\_webots\_controller --release в директории hardware\_mock\_webots\_controller.
+    \item {run\_mock\_robot}: Запускает приложение Webots и имитацию драйвера последовательно. Запускает webots, ждет 5 секунд, затем запускает имитацию драйвера.
+    \item {stop\_mock\_robot}: Останавливает приложение Webots и имитацию драйвера. Завершает все запущенные процессы webots и hardware\_mock\_webots\_controller.
+    \item {control}: Запускает бинарный файл roboq\_service в режиме release с функцией eureka. Выполняет cargo run --release --bin roboq\_service --no-default-features --features eureka.
+    \item {brains}: Запускает бинарный файл roboporter в режиме release с функцией simulation. Устанавливает переменные окружения ICP\_CONFIG и DEVICE\_CONFIG и выполняет cargo run --bin roboporter --release --no-default-features --features simulation в директории roboporter.
 \end{itemize}
