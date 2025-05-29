@@ -45,8 +45,8 @@
 % Почему: Пункт 2.1.3 Требований по оформлению пояснительной записки.
 \usepackage{indentfirst}
 \setlength{\parindent}{1.25cm} % 1.25 - 1.27 см абзацы
-\newlength{\parindentSAFE}
-\setlength{\parindentSAFE}{1.25cm} % 1.25 - 1.27 см абзацы
+\newlength{\parinlen}
+\setlength{\parinlen}{12.5mm} % Recommended: 1.25cm, 1.27cm
 
 
 % Зачем: Настраивает отступы от границ страницы.
@@ -131,41 +131,72 @@
 
 % Зачем: Задает стиль заголовков раздела жирным шрифтом, прописными буквами, без точки в конце
 % Почему: Пункты 2.1.1, 2.2.5, 2.2.6 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
+
 \makeatletter
-\renewcommand\section{%
-  \clearpage\@startsection {section}{1}%
-    {\parindentSAFE}%
-    {\baselineskip}%
-    {\baselineskip}%
-    {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries\MakeUppercase}}
-\makeatother
+\renewcommand{\section}
+{%
+    \clearpage%
+    \@startsection{section}{1}%
+    {\parinlen}%
+    {-1em \@plus -1ex \@minus -.2ex}%
+    {1em \@plus .2ex}%  
+    {\raggedright\normalfont\normalsize\bfseries\MakeUppercase}%
+}
 
+\renewcommand{\subsection}
+{%
+    \@startsection{subsection}{2}%
+    {\parinlen}%
+    {-1em \@plus -1ex \@minus -.2ex}%
+    {1em \@plus .2ex}% 
+    {\raggedright\normalfont\normalsize\bfseries}%
+}
 
-% Зачем: Задает стиль заголовков подразделов
-% Почему: Пункты 2.1.1, 2.2.5 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
-\makeatletter
-\renewcommand\subsection{%
-  \@startsection{subsection}{2}%
-    {\parindentSAFE}%
-    {\baselineskip}%
-    {\baselineskip}%
-    {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries}}
-\makeatother
-
-
-% Зачем: Задает стиль заголовков пунктов
-% Почему: Пункты 2.1.1, 2.2.5 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
-\makeatletter
-\renewcommand\subsubsection{%
-  \@startsection
-    {subsubsection} % name
-    {3} % level
-    {\parindentSAFE} % indent
-    {\baselineskip} % beforeskip
-    {0.0001em} % afterskip
-    {\normalfont} % title in normal font
+\renewcommand{\subsubsection}
+{%
+    \@startsection{subsubsection}{3}%
+    {\parinlen}%
+    {-1em \@plus -1ex \@minus -.2ex}%
+    {1em \@plus .2ex}%                         
+    {\raggedright\normalfont\normalsize}%
 }
 \makeatother
+
+% \makeatletter
+% \renewcommand\section{%
+%   \clearpage\@startsection {section}{1}%
+%     {\parindentSAFE}%
+%     {\baselineskip}%
+%     {\baselineskip}%
+%     {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries\MakeUppercase}}
+% \makeatother
+%
+%
+% % Зачем: Задает стиль заголовков подразделов
+% % Почему: Пункты 2.1.1, 2.2.5 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
+% \makeatletter
+% \renewcommand\subsection{%
+%   \@startsection{subsection}{2}%
+%     {\parindentSAFE}%
+%     {\baselineskip}%
+%     {\baselineskip}%
+%     {\raggedright\hyphenpenalty=10000\normalfont\normalsize\bfseries}}
+% \makeatother
+%
+%
+% % Зачем: Задает стиль заголовков пунктов
+% % Почему: Пункты 2.1.1, 2.2.5 и ПРИЛОЖЕНИЕ Л Требований по оформлению пояснительной записки.
+% \makeatletter
+% \renewcommand\subsubsection{%
+%   \@startsection
+%     {subsubsection} % name
+%     {3} % level
+%     {\parindentSAFE} % indent
+%     {\baselineskip} % beforeskip
+%     {0.0001em} % afterskip
+%     {\normalfont} % title in normal font
+% }
+% \makeatother
 
 % Зачем: для оформления введения и заключения, они должны быть выровнены по центру.
 % Почему: Пункты 1.1.15 и 1.1.11 Требований по оформлению пояснительной записки.
@@ -224,9 +255,33 @@
 \DeclareCaptionLabelFormat{stbtable}{Таблица #2}
 \DeclareCaptionLabelSeparator{stb}{~--~}
 \captionsetup{labelsep=stb}
-\captionsetup[figure]{labelformat=stbfigure,justification=centering}
+\captionsetup[figure]{
+	labelformat=stbfigure,
+	justification=centering,
+	belowskip=0em,
+	aboveskip=\baselineskip
+}
 \captionsetup[table]{labelformat=stbtable,justification=raggedright,skip=0pt}
 \renewcommand{\thesubfigure}{\asbuk{subfigure}}
+
+% \DeclareCaptionLabelSeparator{stb}{~--~}
+% \DeclareCaptionLabelFormat{stbfigure}{Рисунок #2}
+% \DeclareCaptionLabelFormat{stbtable}{Таблица #2}
+
+\setlength{\intextsep}{\baselineskip}
+\setlength{\textfloatsep}{\baselineskip}
+
+\BeforeBeginEnvironment{figure}{\nointerlineskip}
+\AfterEndEnvironment{figure}{\nointerlineskip}
+
+\BeforeBeginEnvironment{table}{\nointerlineskip}
+\AfterEndEnvironment{table}{\nointerlineskip}
+
+% \setlength{\intextsep}{\baselineskip}
+% \setlength{\abovecaptionskip}{\baselineskip}
+% \setlength{\belowcaptionskip}{0em}
+% \setlength{\textfloatsep}{\baselineskip}
+% \setlength{\intextsep}{\baselineskip}
 
 % Зачем: Окружения для оформления формул
 % Почему: Пункт 2.4.7 требований по оформлению пояснительной записки и специфические требования различных кафедр

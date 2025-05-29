@@ -9,8 +9,6 @@
 \begin{document}
 \setcounter{page}{2}
 \setlength{\baselineskip}{18pt}
-\setlength{\intextsep}{\baselineskip}
-\setlength{\abovecaptionskip}{\baselineskip}
 
 \def \appname {ПС}
 \def \diplomaname {программное средство навигации мобильных систем}
@@ -48,13 +46,21 @@
 \addcontentsline{toc}{section}{\nameref{sec:literat}}
 \bibliography{test}
 
-\sectioncentered*{Приложение А (обязательное) Текст программного модуля TODO}
+\sectioncentered*{Приложение А
+\\
+(обязательное)
+\\
+Текст программного средства}
 \label{sec:priloj}
-\addcontentsline{toc}{section}{\nameref{sec:priloj}}
+\addcontentsline{toc}{section}{
+Приложение А
+(обязательное)
+Текст программного средства
+}
 
-% \lstset{breaklines=true, breakatwhitespace=false,
-%   alsoletter={.},
-% }
-% \lstinputlisting[breaklines=true]{dump2}
+\lstset{breaklines=true, breakatwhitespace=false,
+  alsoletter={.},
+}
+\lstinputlisting[breaklines=true]{dump2}
 
 \end{document}
