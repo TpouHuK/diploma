@@ -157,7 +157,7 @@
     \@startsection{subsubsection}{3}%
     {\parinlen}%
     {-1em \@plus -1ex \@minus -.2ex}%
-    {1em \@plus .2ex}%                         
+    {0.00001em}%                         
     {\raggedright\normalfont\normalsize}%
 }
 \makeatother
@@ -273,6 +273,8 @@
 
 \BeforeBeginEnvironment{figure}{\nointerlineskip}
 \AfterEndEnvironment{figure}{\nointerlineskip}
+\BeforeBeginEnvironment{lstlistng}{\nointerlineskip}
+\AfterEndEnvironment{lstlisting}{\nointerlineskip}
 
 \BeforeBeginEnvironment{table}{\nointerlineskip}
 \AfterEndEnvironment{table}{\nointerlineskip}
@@ -431,6 +433,11 @@
 \usepackage[final]{listings}
 \usepackage{listings-rust}
 
+\lstset{
+  aboveskip=\baselineskip,
+  belowskip=\baselineskip
+}
+
 \newfontfamily\consolas{Consolas}
 \lstset{
 	% basicstyle=\small\consolas,
@@ -438,7 +445,7 @@
   breaklines=true,
   breakatwhitespace=true,
   breakindent=20pt, % or any value you prefer
-  language=Rust,
+  % language=Rust,
   % ... other options ...
 }
 
@@ -536,6 +543,7 @@
 
 % Для оформления таблиц не влязящих на 1 страницу
 \usepackage{longtable}
+\usepackage{ltablex}
 
 % Для включения pdf документов в результирующий файл
 \usepackage{pdfpages}

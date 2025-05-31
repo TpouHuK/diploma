@@ -7,7 +7,7 @@
 \input{src2/000preamble}
 
 \begin{document}
-\setcounter{page}{2}
+\setcounter{page}{5}
 \setlength{\baselineskip}{18pt}
 
 \def \appname {ПС}
@@ -46,17 +46,15 @@
 \addcontentsline{toc}{section}{\nameref{sec:literat}}
 \bibliography{test}
 
-\sectioncentered*{Приложение А
-\\
-(обязательное)
-\\
-Текст программного средства}
-\label{sec:priloj}
-\addcontentsline{toc}{section}{
-Приложение А
-(обязательное)
-Текст программного средства
-}
+\sectioncentered*{Приложение А}
+\vspace{-\baselineskip + 5pt}
+\begin{center}
+	\bfseries\normalsize
+	(обязательное) \\
+Текст программного средства 
+\end{center}
+
+\addcontentsline{toc}{section}{Приложение А (обязательное) Текст программного средства}
 
 \lstset{breaklines=true, breakatwhitespace=false,
   alsoletter={.},
