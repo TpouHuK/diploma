@@ -153,6 +153,40 @@ Rust также предоставляет встроенные инструме
 позволяет циклу событий непрерывно выполнятся вне зависимости от того какие
 входные данные были получены.
 
+
+Цикл и обработчики скрыты за абстракцией runner, которая просто позволяет сделать главную программу более читаемой и поддерживаемой.
+\begin{lstlisting}
+    let runner_task = tokio::task::spawn(async move {
+        runner
+            .run(control, devices)
+            .await
+            .expect("Runner is failed");
+    });
+
+    let dispatcher_task = tokio::task::spawn(async move {
+        servers::priority::run(
+            dispatcher,
+            PriorityConfig {
+                default_port: ports.default_port,
+                priority_port: ports.priority_port,
+                timeout_delay: Duration::from_millis(500),
+            },
+        )
+        .await
+        .expect("Server is failed");
+    });
+
+    tokio::select! {
+        status = runner_task => {
+            log::info!("Runner task is terminated: {status:?}");
+        }
+
+        status = dispatcher_task => {
+            log::info!("Dispatcher task is terminated: {status:?}");
+        }
+    }
+\end{lstlisting}
+
 % \subsection{Разработка модуля \todo{MotionEstimation}}
 
 \subsection{Разработка UKF}
