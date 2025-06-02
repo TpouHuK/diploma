@@ -322,6 +322,8 @@ where
 \subsection{Разработка модуля оценки состояния}
 \label{subsec:motion_estimation}
 
+
+Для удобства и повышения читаемости кода были объявлены типы данных для состояния и самого фильтра Калмана.
 \begin{lstlisting}
 pub type FilterState = ukf::FilterState<
     ACCEL_MODEL_STATE_SIZE,
@@ -334,7 +336,11 @@ pub type KallmanFilter = ukf::KallmanFilter<
     MEASUREMENT_SIZE,
     ACCELERATION_MODEL_SIGMA_ORDER,
 >;
+\end{lstlisting}
 
+Для оценки модуль должен где-то хранить свои внутренние данные. Для этого была создана структура MotionEstimation. 
+
+\begin{lstlisting}
 pub struct MotionEstimation {
     pub config: MotionEstimationConfig,
     pub states: Vec<FilterState>,
@@ -344,6 +350,8 @@ pub struct MotionEstimation {
     pub imu_filter: Option<ImuFilter>,
 }
 \end{lstlisting}
+
+При разработке модуля был применён событийно-риентированный подход к проектированию. Пересчёт предсказания позиции происходит только по прихождению сообщения от GPS, IMU и модуля сопоставления сканов.
 
 \begin{lstlisting}
 fn apply_event(
@@ -745,49 +753,69 @@ pub fn match_points_cloud_with_kdtree(
         source,
     )
 }
+\end{lstlisting}
 
-/// The central algorithm for finding the transformation using SVD
-pub fn best_fit_transform(
-    source: &PointCloud,
-    target: &PointCloud,
-) -> (Vector2<f32>, Matrix2<f32>, f32) {
-    assert_eq!(source.len(), target.len());
-    assert!(!source.is_empty());
+\subsection{Отправка команд на шасси}
+На гусеничном шасси установлены два электромотора. Драйвера электромоторов упровляются по UART. Для корректного управления ходовой был написан слой, который транслирует команды модуля навигации в команды моторов и отправляет их по UART.
 
-    let source_centroid = source
-        .iter()
-        .fold(Point2::new(0.0, 0.0), |sum, point| sum + point.coords)
-        / source.len() as f32;
+\begin{lstlisting}
+#[tokio::main]
+async fn main() {
+    env_logger::builder().init();
+    let term_flag = Arc::new(AtomicBool::new(false));
 
-    let target_centroid = target
-        .iter()
-        .fold(Point2::new(0.0, 0.0), |sum, point| sum + point.coords)
-        / target.len() as f32;
+    for sig in signal_hook::consts::TERM_SIGNALS {
+        signal_hook::flag::register_conditional_shutdown(
+            *sig,
+            42,
+            Arc::clone(&term_flag),
+        )
+        .expect("Failed to set conditional shutdown");
+        signal_hook::flag::register(*sig, Arc::clone(&term_flag))
+            .expect("Failed to set default sig handler");
+    }
 
-    let moved_source: Vec<_> = source
-        .iter()
-        .map(|point| (point - source_centroid).transpose())
-        .collect();
-    let moved_target: Vec<_> = target
-        .iter()
-        .map(|point| (point - target_centroid).transpose())
-        .collect();
+    #[cfg(not(feature = "async"))]
+    let driver = driver();
+    #[cfg(feature = "async")]
+    let driver = driver().await;
 
-    let moved_source: OMatrix<f32, Dyn, U2> =
-        OMatrix::<f32, Dyn, U2>::from_rows(moved_source.as_slice());
-    let moved_target: OMatrix<f32, Dyn, U2> =
-        OMatrix::<f32, Dyn, U2>::from_rows(moved_target.as_slice());
+    let config = config();
+    let odometry_timeout_ms =
+        parse_env!("ODOMETRY_TIMEOUT", u64).unwrap_or(200);
 
-    let cov_mat = moved_target.transpose() * &moved_source;
-    let svd = nalgebra::SVD::new(cov_mat, true, true);
-    let u = svd.u.unwrap();
-    let v_t = svd.v_t.unwrap();
-    let r = u * v_t;
-    let t = target_centroid - r * source_centroid;
+    let dispatcher = MotorDispatcher::new(
+        (&term_flag).into(),
+        driver,
+        Duration::from_millis(odometry_timeout_ms),
+    );
+    let _ = servers::priority::run(dispatcher, config).await;
 
-    let error =
-        (moved_target - (r * moved_source.transpose()).transpose()).norm();
-
-    (t, r, error)
+    debug!("Exiting after termination signal");
 }
 \end{lstlisting}
+
+В примере кода выше происходит конфигурация каналов связи с модулем навигации и моторами. 
+Так же выставляется время отключения моторов при отсутсвии потока команд. Это сделано для безопасности, чтобы исключить ситуацию продолжения езды платформы при зависании программы модуля навигации.
+
+Так как на одноплатном компьютере есть операционная система Linux, то взаимодействие с моторами по UART сводится к записи в файл.
+
+\begin{lstlisting}
+#[cfg(feature = "serial")]
+fn driver() -> impl MotorDriver {
+    use drivers::SerialMotor;
+
+    let config = motor_config();
+
+    let device_path = parse_env!("MOTOR_DEVICE", String)
+        .unwrap_or("/dev/ttyUSB0".to_string());
+    info!("Motor device: {device_path}");
+    SerialMotor::new(device_path, config).expect("Failed to create serial port")
+}
+\end{lstlisting}
+
+\subsection{Построение маршрута по карте}
+
+
+На гусеничном шасси установлены два электромотора. Драйвера электромоторов упровляются по UART. Для корректного управления ходовой был написан слой, который транслирует команды модуля навигации в команды моторов и отправляет их по UART.
+
